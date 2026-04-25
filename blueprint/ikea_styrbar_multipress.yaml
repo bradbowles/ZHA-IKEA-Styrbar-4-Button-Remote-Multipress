@@ -1,0 +1,559 @@
+blueprint:
+  name: ZHA Events - IKEA Styrbar 4 Button Remote - Multipress
+  description: >
+    Multi‑press support (1–5 presses + long press) for the IKEA Styrbar
+    4‑button remote using ZHA. Supports up/down/left/right with independent
+    actions for each press count.
+  domain: automation
+  source_url: https://github.com/bradbowles/ZHA-IKEA-Styrbar-4-Button-Remote-Multipress
+  version: "1.0.0"
+  author: "Original author: Thomas Maurice — Repo packaging by Brad Bowles"
+  homeassistant_blueprint_credit: "Based on https://gist.github.com/thomas-maurice/794d44ed2c0cef7909e2453759ba7a99"
+  input:
+    remote:
+      name: IKEA Styrbar remote control 4 buttons
+      description: Pick the remote you want to bind to the automation
+      selector:
+        device:
+          integration: zha
+          manufacturer: IKEA of Sweden
+          model: Remote Control N2
+    press_timeout:
+      name: Timeout
+      description: Time after which your button press will be considered the last one of the sequence
+      selector:
+        number:
+          min: 100.0
+          max: 2000.0
+          step: 100.0
+          unit_of_measurement: milliseconds
+          mode: slider
+      default: 500
+
+    action_on_single_press:
+      name: Up button single press
+      description: Action to perform on a single press of the up button
+      selector:
+        action: {}
+      default: []
+    action_on_double_press:
+      name: Up button double press
+      description: Action to perform on a double press of the up button
+      selector:
+        action: {}
+      default: []
+    action_on_triple_press:
+      name: Up button triple press
+      description: Action to perform on a triple press of the up button
+      selector:
+        action: {}
+      default: []
+    action_on_quad_press:
+      name: Up button quadruple press
+      description: |
+        Action to perform on a quadruple press of the button. On this button the press rate is not as
+        fast as it is on the left/right buttons, so I would recommend raising the press timeout if you
+        intend to uses this. From testing, 750mns is usually a good value.
+      selector:
+        action: {}
+      default: []
+    action_on_quint_press:
+      name: Up button quintuple press
+      description: |
+        Action to perform on a quintuple press of the button. On this button the press rate is not as
+        fast as it is on the left/right buttons, so I would recommend raising the press timeout if you
+        intend to uses this. From testing, 750mns is usually a good value.
+      selector:
+        action: {}
+      default: []
+    
+    action_off_single_press:
+      name: Down button single press
+      description: Action to perform on a single press of the down button
+      selector:
+        action: {}
+      default: []
+    action_off_double_press:
+      name: Down button double press
+      description: Action to perform on a double press of the down button
+      selector:
+        action: {}
+      default: []
+    action_off_triple_press:
+      name: Down button triple press
+      description: Action to perform on a triple press of the down button
+      selector:
+        action: {}
+      default: []
+    action_off_quad_press:
+      name: Down button quadruple press
+      description: |
+        Action to perform on a quadruple press of the button. On this button the press rate is not as
+        fast as it is on the left/right buttons, so I would recommend raising the press timeout if you
+        intend to uses this. From testing, 750mns is usually a good value.
+      selector:
+        action: {}
+      default: []
+    action_off_quint_press:
+      name: Down button quintuple press
+      description: |
+        Action to perform on a quintuple press of the button. On this button the press rate is not as
+        fast as it is on the left/right buttons, so I would recommend raising the press timeout if you
+        intend to uses this. From testing, 750mns is usually a good value.
+      selector:
+        action: {}
+      default: []
+
+    action_right_single_press:
+      name: Right button single press
+      description: Action to perform on a single press of the right button
+      selector:
+        action: {}
+      default: []
+    action_right_double_press:
+      name: Right button double press
+      description: Action to perform on a double press of the right button
+      selector:
+        action: {}
+      default: []
+    action_right_triple_press:
+      name: Right button triple press
+      description: Action to perform on a triple press of the right button
+      selector:
+        action: {}
+      default: []
+    action_right_quad_press:
+      name: Right button quadruple press
+      description: Action to perform on a quadruple press of the right button
+      selector:
+        action: {}
+      default: []
+    action_right_quint_press:
+      name: Right button quintuple press
+      description: Action to perform on a quintuple press of the right button
+      selector:
+        action: {}
+      default: []
+
+    action_left_single_press:
+      name: Left button single press
+      description: Action to perform on a single press of the left button
+      selector:
+        action: {}
+      default: []
+    action_left_double_press:
+      name: Left button double press
+      description: Action to perform on a double press of the left button
+      selector:
+        action: {}
+      default: []
+    action_left_triple_press:
+      name: Left button triple press
+      description: Action to perform on a triple press of the left button
+      selector:
+        action: {}
+      default: []
+    action_left_quad_press:
+      name: Left button quadruple press
+      description: Action to perform on a quadruple press of the left button
+      selector:
+        action: {}
+      default: []
+    action_left_quint_press:
+      name: Left button quintuple press
+      description: Action to perform on a quintuple press of the left button
+      selector:
+        action: {}
+      default: []
+
+    action_long_press:
+      name: Long press on either right or left
+      description: |
+        Action to perform on a long press of the left or right button.
+
+        Please be aware that if you hold this a millisecond more than you should,
+        then an "on" event will be fired and potentially ruin your day. If I were you
+        I would not use this event, but I mean, you do you.
+      selector:
+        action: {}
+      default: []
+triggers:
+  - trigger: event
+    event_type: zha_event
+    event_data:
+      device_id: !input remote
+
+conditions:
+  - condition: template
+    value_template: >-
+      {% if trigger.event.data.command in ["press", "release", "on", "off"] %}true{% else %}false{% endif %}
+
+actions:
+  - choose:
+      # Long press on either right or left
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.event.data.command == \"release\" }}"
+        sequence: !input action_long_press
+
+      # Press the "On" (or up) button
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.event.data.command == \"on\" }}"
+        sequence:
+          - wait_for_trigger:
+              - event_type: zha_event
+                event_data:
+                  device_id: !input remote
+                  command: "on"
+                trigger: event
+            timeout:
+              hours: 0
+              minutes: 0
+              seconds: 0
+              milliseconds: !input press_timeout
+            continue_on_timeout: true
+          # Only 1 press
+          - if:
+            - condition: template
+              value_template: "{{ wait.trigger is none }}"
+            then:
+              sequence: !input action_on_single_press
+            # 2+ presses
+            else:
+              sequence:
+                - wait_for_trigger:
+                  - event_type: zha_event
+                    event_data:
+                      device_id: !input remote
+                      command: "on"
+                    trigger: event
+                  timeout:
+                    hours: 0
+                    minutes: 0
+                    seconds: 0
+                    milliseconds: !input press_timeout
+                  continue_on_timeout: true
+                - if: # 2 presses
+                  - condition: template
+                    value_template: "{{ wait.trigger is none }}"
+                  then:
+                    sequence: !input action_on_double_press
+                  else: # 3+ presses
+                    - wait_for_trigger:
+                      - event_type: zha_event
+                        event_data:
+                          device_id: !input remote
+                          command: "on"
+                        trigger: event
+                      timeout:
+                        hours: 0
+                        minutes: 0
+                        seconds: 0
+                        milliseconds: !input press_timeout
+                      continue_on_timeout: true
+                    - if: # 3 presses
+                      - condition: template
+                        value_template: "{{ wait.trigger is none }}"
+                      then:
+                        sequence: !input action_on_triple_press
+                      else: # 4+ presses
+                        - wait_for_trigger:
+                          - event_type: zha_event
+                            event_data:
+                              device_id: !input remote
+                              command: "on"
+                            trigger: event
+                          timeout:
+                            hours: 0
+                            minutes: 0
+                            seconds: 0
+                            milliseconds: !input press_timeout
+                          continue_on_timeout: true
+                        - if: # 4 Presses
+                          - condition: template
+                            value_template: "{{ wait.trigger is none }}"
+                          then:
+                            sequence: !input action_on_quad_press
+                          else: # 5 presses
+                            sequence: !input action_on_quint_press
+
+      # Press Right
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.event.data.command == \"press\" and trigger.event.data.args == [256, 13, 0] }}"
+        sequence:
+          - wait_for_trigger:
+              - event_type: zha_event
+                event_data:
+                  device_id: !input remote
+                  command: press
+                  args:
+                  - 256
+                  - 13
+                  - 0
+                trigger: event
+            timeout:
+              hours: 0
+              minutes: 0
+              seconds: 0
+              milliseconds: !input press_timeout
+            continue_on_timeout: true
+          # Only 1 press
+          - if:
+            - condition: template
+              value_template: "{{ wait.trigger is none }}"
+            then:
+              sequence: !input action_right_single_press
+            # 2+ presses
+            else:
+              sequence:
+                - wait_for_trigger:
+                  - event_type: zha_event
+                    event_data:
+                      device_id: !input remote
+                      command: press
+                      args:
+                      - 256
+                      - 13
+                      - 0
+                    trigger: event
+                  timeout:
+                    hours: 0
+                    minutes: 0
+                    seconds: 0
+                    milliseconds: !input press_timeout
+                  continue_on_timeout: true
+                - if: # 2 presses
+                  - condition: template
+                    value_template: "{{ wait.trigger is none }}"
+                  then:
+                    sequence: !input action_right_double_press
+                  else: # 3+ presses
+                    - wait_for_trigger:
+                      - event_type: zha_event
+                        event_data:
+                          device_id: !input remote
+                          command: press
+                          args:
+                          - 256
+                          - 13
+                          - 0
+                        trigger: event
+                      timeout:
+                        hours: 0
+                        minutes: 0
+                        seconds: 0
+                        milliseconds: !input press_timeout
+                      continue_on_timeout: true
+                    - if: # 3 presses
+                      - condition: template
+                        value_template: "{{ wait.trigger is none }}"
+                      then:
+                        sequence: !input action_right_triple_press
+                      else: # 4+ presses
+                        - wait_for_trigger:
+                          - event_type: zha_event
+                            event_data:
+                              device_id: !input remote
+                              command: press
+                              args:
+                              - 256
+                              - 13
+                              - 0
+                            trigger: event
+                          timeout:
+                            hours: 0
+                            minutes: 0
+                            seconds: 0
+                            milliseconds: !input press_timeout
+                          continue_on_timeout: true
+                        - if: # 4 Presses
+                          - condition: template
+                            value_template: "{{ wait.trigger is none }}"
+                          then:
+                            sequence: !input action_right_quad_press
+                          else: # 5 presses
+                            sequence: !input action_right_quint_press
+      # Press Left
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.event.data.command == \"press\" and trigger.event.data.args == [257, 13, 0] }}"
+        sequence:
+          - wait_for_trigger:
+              - event_type: zha_event
+                event_data:
+                  device_id: !input remote
+                  command: press
+                  args:
+                  - 256
+                  - 13
+                  - 0
+                trigger: event
+            timeout:
+              hours: 0
+              minutes: 0
+              seconds: 0
+              milliseconds: !input press_timeout
+            continue_on_timeout: true
+          # Only 1 press
+          - if:
+            - condition: template
+              value_template: "{{ wait.trigger is none }}"
+            then:
+              sequence: !input action_left_single_press
+            # 2+ presses
+            else:
+              sequence:
+                - wait_for_trigger:
+                  - event_type: zha_event
+                    event_data:
+                      device_id: !input remote
+                      command: press
+                      args:
+                      - 257
+                      - 13
+                      - 0
+                    trigger: event
+                  timeout:
+                    hours: 0
+                    minutes: 0
+                    seconds: 0
+                    milliseconds: !input press_timeout
+                  continue_on_timeout: true
+                - if: # 2 presses
+                  - condition: template
+                    value_template: "{{ wait.trigger is none }}"
+                  then:
+                    sequence: !input action_left_double_press
+                  else: # 3+ presses
+                    - wait_for_trigger:
+                      - event_type: zha_event
+                        event_data:
+                          device_id: !input remote
+                          command: press
+                          args:
+                          - 257
+                          - 13
+                          - 0
+                        trigger: event
+                      timeout:
+                        hours: 0
+                        minutes: 0
+                        seconds: 0
+                        milliseconds: !input press_timeout
+                      continue_on_timeout: true
+                    - if: # 3 presses
+                      - condition: template
+                        value_template: "{{ wait.trigger is none }}"
+                      then:
+                        sequence: !input action_left_triple_press
+                      else: # 4+ presses
+                        - wait_for_trigger:
+                          - event_type: zha_event
+                            event_data:
+                              device_id: !input remote
+                              command: press
+                              args:
+                              - 257
+                              - 13
+                              - 0
+                            trigger: event
+                          timeout:
+                            hours: 0
+                            minutes: 0
+                            seconds: 0
+                            milliseconds: !input press_timeout
+                          continue_on_timeout: true
+                        - if: # 4 Presses
+                          - condition: template
+                            value_template: "{{ wait.trigger is none }}"
+                          then:
+                            sequence: !input action_left_quad_press
+                          else: # 5 presses
+                            sequence: !input action_left_quint_press
+
+      # Press the "Off" (or down) button
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.event.data.command == \"off\" }}"
+        sequence:
+          - wait_for_trigger:
+              - event_type: zha_event
+                event_data:
+                  device_id: !input remote
+                  command: "off"
+                trigger: event
+            timeout:
+              hours: 0
+              minutes: 0
+              seconds: 0
+              milliseconds: !input press_timeout
+            continue_on_timeout: true
+          # Only 1 press
+          - if:
+            - condition: template
+              value_template: "{{ wait.trigger is none }}"
+            then:
+              sequence: !input action_off_single_press
+            # 2+ presses
+            else:
+              sequence:
+                - wait_for_trigger:
+                  - event_type: zha_event
+                    event_data:
+                      device_id: !input remote
+                      command: "off"
+                    trigger: event
+                  timeout:
+                    hours: 0
+                    minutes: 0
+                    seconds: 0
+                    milliseconds: !input press_timeout
+                  continue_on_timeout: true
+                - if: # 2 presses
+                  - condition: template
+                    value_template: "{{ wait.trigger is none }}"
+                  then:
+                    sequence: !input action_off_double_press
+                  else: # 3+ presses
+                    - wait_for_trigger:
+                      - event_type: zha_event
+                        event_data:
+                          device_id: !input remote
+                          command: "off"
+                        trigger: event
+                      timeout:
+                        hours: 0
+                        minutes: 0
+                        seconds: 0
+                        milliseconds: !input press_timeout
+                      continue_on_timeout: true
+                    - if: # 3 presses
+                      - condition: template
+                        value_template: "{{ wait.trigger is none }}"
+                      then:
+                        sequence: !input action_off_triple_press
+                      else: # 4+ presses
+                        - wait_for_trigger:
+                          - event_type: zha_event
+                            event_data:
+                              device_id: !input remote
+                              command: "off"
+                            trigger: event
+                          timeout:
+                            hours: 0
+                            minutes: 0
+                            seconds: 0
+                            milliseconds: !input press_timeout
+                          continue_on_timeout: true
+                        - if: # 4 Presses
+                          - condition: template
+                            value_template: "{{ wait.trigger is none }}"
+                          then:
+                            sequence: !input action_off_quad_press
+                          else: # 5 presses
+                            sequence: !input action_off_quint_press
+
+max_exceeded: silent
+mode: single
