@@ -3,12 +3,8 @@ blueprint:
   description: >
     Multi‑press support (1–5 presses + long press) for the IKEA Styrbar
     4‑button remote using ZHA. Supports up/down/left/right with independent
-    actions for each press count.
+    actions for each press count. "Original author: Thomas Maurice — Repo packaging by Brad Bowles - Based on https://gist.github.com/thomas-maurice/794d44ed2c0cef7909e2453759ba7a99"
   domain: automation
-  source_url: https://github.com/bradbowles/ZHA-IKEA-Styrbar-4-Button-Remote-Multipress
-  version: "1.0.0"
-  author: "Original author: Thomas Maurice — Repo packaging by Brad Bowles"
-  homeassistant_blueprint_credit: "Based on https://gist.github.com/thomas-maurice/794d44ed2c0cef7909e2453759ba7a99"
   input:
     remote:
       name: IKEA Styrbar remote control 4 buttons
