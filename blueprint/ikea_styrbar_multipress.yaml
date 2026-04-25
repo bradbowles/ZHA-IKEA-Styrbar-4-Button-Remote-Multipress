@@ -386,7 +386,7 @@ actions:
                   device_id: !input remote
                   command: press
                   args:
-                  - 256
+                  - 257
                   - 13
                   - 0
                 trigger: event
