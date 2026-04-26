@@ -140,7 +140,7 @@ blueprint:
       selector: { action: {} }
       default: []
 
-mode: queued
+mode: parallel
 max_exceeded: silent
 
 trigger:
