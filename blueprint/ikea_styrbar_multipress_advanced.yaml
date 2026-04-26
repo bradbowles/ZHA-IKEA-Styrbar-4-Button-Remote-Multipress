@@ -645,6 +645,14 @@ actions:
 
       ##################################################################
       # UP LONG-PRESS (cluster 8, move_with_on_off)
+      #
+      # The stop event (stop/stop_with_on_off) cannot be caught by
+      # wait_for_trigger inside the loop when mode: single is active,
+      # because mode: single drops new automation triggers — but
+      # wait_for_trigger listens to events independently of the
+      # automation trigger, so it DOES still receive them.
+      # The repeat count limit (100) is a safety net only — in normal
+      # use the stop event will always exit the loop first.
       ##################################################################
       - conditions:
           - condition: template
@@ -712,8 +720,9 @@ actions:
                   continue_on_timeout: true
 
               until:
+                # Exit when stop event received OR after 100 repeats as safety net
                 - condition: template
-                  value_template: "{{ wait.trigger is not none }}"
+                  value_template: "{{ wait.trigger is not none or repeat.index >= 100 }}"
 
       ##################################################################
       # DOWN LONG-PRESS (cluster 8, move)
@@ -784,5 +793,6 @@ actions:
                   continue_on_timeout: true
 
               until:
+                # Exit when stop event received OR after 100 repeats as safety net
                 - condition: template
-                  value_template: "{{ wait.trigger is not none }}"
+                  value_template: "{{ wait.trigger is not none or repeat.index >= 100 }}"
