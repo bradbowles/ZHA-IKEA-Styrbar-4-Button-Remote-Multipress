@@ -1,21 +1,17 @@
 blueprint:
-  name: "ZHA Events - IKEA Styrbar 4 Button Remote - Multipress (Advanced, Flat Inputs)"
+  name: "ZHA - IKEA Styrbar N2 (4‑Button) — Multipress 1–3 + UP/DOWN Long‑Press Repeat"
   description: >
-    Advanced multi-press and long-press automation for the IKEA Styrbar 4-button
-    remote using ZHA. Supports 1–3 presses, long-press, hold-repeat brightness/
-    volume control, optional entities, helper clearing, and full action mapping.
+    Fully-corrected Styrbar N2 blueprint using the real ZHA event model.
+    Supports single/double/triple press on all buttons, UP/DOWN long‑press
+    brightness/volume repeat, LEFT/RIGHT long‑press ignored (LP‑LR‑None),
+    optional entity mapping, helper tracking, and clean UI.
 
   domain: automation
 
   input:
 
-    ############################################################
-    # CORE INPUTS
-    ############################################################
-
     remote:
-      name: IKEA Styrbar remote control (4 buttons)
-      description: "Select the Styrbar remote device."
+      name: Styrbar Remote (ZHA)
       selector:
         device:
           integration: zha
@@ -24,40 +20,12 @@ blueprint:
 
     last_action_helper:
       name: Last Action Helper (input_text)
-      description: >
-        Stores the last entity used by any press. Long-press UP/DOWN adjusts
-        brightness/volume of this entity. If a press has no entity configured,
-        the helper is cleared.
       selector:
         entity:
           domain: input_text
 
-    enable_up:
-      name: Enable UP button group
-      default: true
-      selector:
-        boolean: {}
-
-    enable_down:
-      name: Enable DOWN button group
-      default: true
-      selector:
-        boolean: {}
-
-    enable_left:
-      name: Enable LEFT button group
-      default: true
-      selector:
-        boolean: {}
-
-    enable_right:
-      name: Enable RIGHT button group
-      default: true
-      selector:
-        boolean: {}
-
     press_timeout:
-      name: Multi-press timeout (ms)
+      name: Multi‑press timeout (ms)
       default: 350
       selector:
         number:
@@ -65,10 +33,9 @@ blueprint:
           max: 1000
           step: 50
           unit_of_measurement: ms
-          mode: slider
 
     hold_repeat_interval:
-      name: Hold-repeat interval (ms)
+      name: Long‑press repeat interval (ms)
       default: 300
       selector:
         number:
@@ -76,17 +43,15 @@ blueprint:
           max: 1000
           step: 50
           unit_of_measurement: ms
-          mode: slider
 
     brightness_step:
-      name: Brightness step (1–50)
+      name: Brightness step (%)
       default: 10
       selector:
         number:
           min: 1
           max: 50
           step: 1
-          mode: slider
 
     volume_step:
       name: Volume step (0.01–0.20)
@@ -96,7 +61,6 @@ blueprint:
           min: 0.01
           max: 0.20
           step: 0.01
-          mode: slider
 
     debug_mode:
       name: Enable debug logging
@@ -105,227 +69,131 @@ blueprint:
         boolean: {}
 
     ############################################################
-    # UP BUTTON — ENTITY INPUTS
+    # ENTITY INPUTS — CLEAN (Single / Double / Triple only)
     ############################################################
 
     up_single_entity:
       name: UP — Single Press Entity
-      selector:
-        entity: {}
+      selector: { entity: {} }
       default: ""
 
     up_double_entity:
       name: UP — Double Press Entity
-      selector:
-        entity: {}
+      selector: { entity: {} }
       default: ""
 
     up_triple_entity:
       name: UP — Triple Press Entity
-      selector:
-        entity: {}
+      selector: { entity: {} }
       default: ""
-
-    up_long_entity:
-      name: UP — Long Press Entity
-      selector:
-        entity: {}
-      default: ""
-
-    ############################################################
-    # DOWN BUTTON — ENTITY INPUTS
-    ############################################################
 
     down_single_entity:
       name: DOWN — Single Press Entity
-      selector:
-        entity: {}
+      selector: { entity: {} }
       default: ""
 
     down_double_entity:
       name: DOWN — Double Press Entity
-      selector:
-        entity: {}
+      selector: { entity: {} }
       default: ""
 
     down_triple_entity:
       name: DOWN — Triple Press Entity
-      selector:
-        entity: {}
+      selector: { entity: {} }
       default: ""
-
-    down_long_entity:
-      name: DOWN — Long Press Entity
-      selector:
-        entity: {}
-      default: ""
-
-    ############################################################
-    # LEFT BUTTON — ENTITY INPUTS
-    ############################################################
 
     left_single_entity:
       name: LEFT — Single Press Entity
-      selector:
-        entity: {}
+      selector: { entity: {} }
       default: ""
 
     left_double_entity:
       name: LEFT — Double Press Entity
-      selector:
-        entity: {}
+      selector: { entity: {} }
       default: ""
 
     left_triple_entity:
       name: LEFT — Triple Press Entity
-      selector:
-        entity: {}
+      selector: { entity: {} }
       default: ""
-
-    left_long_entity:
-      name: LEFT — Long Press Entity
-      selector:
-        entity: {}
-      default: ""
-
-    ############################################################
-    # RIGHT BUTTON — ENTITY INPUTS
-    ############################################################
 
     right_single_entity:
       name: RIGHT — Single Press Entity
-      selector:
-        entity: {}
+      selector: { entity: {} }
       default: ""
 
     right_double_entity:
       name: RIGHT — Double Press Entity
-      selector:
-        entity: {}
+      selector: { entity: {} }
       default: ""
 
     right_triple_entity:
       name: RIGHT — Triple Press Entity
-      selector:
-        entity: {}
-      default: ""
-
-    right_long_entity:
-      name: RIGHT — Long Press Entity
-      selector:
-        entity: {}
+      selector: { entity: {} }
       default: ""
 
     ############################################################
-    # UP BUTTON — ACTION INPUTS
+    # ACTION INPUTS — CLEAN (Single / Double / Triple only)
     ############################################################
 
     up_single_action:
       name: UP — Single Press Action
-      selector:
-        action: {}
+      selector: { action: {} }
       default: []
 
     up_double_action:
       name: UP — Double Press Action
-      selector:
-        action: {}
+      selector: { action: {} }
       default: []
 
     up_triple_action:
       name: UP — Triple Press Action
-      selector:
-        action: {}
+      selector: { action: {} }
       default: []
-
-    up_long_action:
-      name: UP — Long Press Action
-      selector:
-        action: {}
-      default: []
-
-    ############################################################
-    # DOWN BUTTON — ACTION INPUTS
-    ############################################################
 
     down_single_action:
       name: DOWN — Single Press Action
-      selector:
-        action: {}
+      selector: { action: {} }
       default: []
 
     down_double_action:
       name: DOWN — Double Press Action
-      selector:
-        action: {}
+      selector: { action: {} }
       default: []
 
     down_triple_action:
       name: DOWN — Triple Press Action
-      selector:
-        action: {}
+      selector: { action: {} }
       default: []
-
-    down_long_action:
-      name: DOWN — Long Press Action
-      selector:
-        action: {}
-      default: []
-
-    ############################################################
-    # LEFT BUTTON — ACTION INPUTS
-    ############################################################
 
     left_single_action:
       name: LEFT — Single Press Action
-      selector:
-        action: {}
+      selector: { action: {} }
       default: []
 
     left_double_action:
       name: LEFT — Double Press Action
-      selector:
-        action: {}
+      selector: { action: {} }
       default: []
 
     left_triple_action:
       name: LEFT — Triple Press Action
-      selector:
-        action: {}
+      selector: { action: {} }
       default: []
-
-    left_long_action:
-      name: LEFT — Long Press Action
-      selector:
-        action: {}
-      default: []
-
-    ############################################################
-    # RIGHT BUTTON — ACTION INPUTS
-    ############################################################
 
     right_single_action:
       name: RIGHT — Single Press Action
-      selector:
-        action: {}
+      selector: { action: {} }
       default: []
 
     right_double_action:
       name: RIGHT — Double Press Action
-      selector:
-        action: {}
+      selector: { action: {} }
       default: []
 
     right_triple_action:
       name: RIGHT — Triple Press Action
-      selector:
-        action: {}
-      default: []
-
-    right_long_action:
-      name: RIGHT — Long Press Action
-      selector:
-        action: {}
+      selector: { action: {} }
       default: []
 
 mode: restart
@@ -339,20 +207,12 @@ trigger:
 
 variables:
 
-  # Core settings
   press_timeout: !input press_timeout
   hold_repeat_interval: !input hold_repeat_interval
   brightness_step: !input brightness_step
   volume_step: !input volume_step
   debug: !input debug_mode
 
-  # Button enable toggles
-  enable_up: !input enable_up
-  enable_down: !input enable_down
-  enable_left: !input enable_left
-  enable_right: !input enable_right
-
-  # Helper
   helper: !input last_action_helper
   last_entity: "{{ states(helper) }}"
   last_domain: >
@@ -362,12 +222,13 @@ variables:
       none
     {% endif %}
 
-  # Extract ZHA event fields
   command: "{{ trigger.event.data.command }}"
   args: "{{ trigger.event.data.args | default([]) }}"
   cluster_id: "{{ trigger.event.data.cluster_id | default(None) }}"
 
-  # Determine button pressed (based on your real events)
+  ############################################################
+  # BUTTON DETECTION — REAL ZHA MODEL (from your logs)
+  ############################################################
   button: >
     {% if cluster_id == 6 and command == 'on' %}
       up
@@ -385,48 +246,41 @@ variables:
       unknown
     {% endif %}
 
-  # Determine press type (for entity mapping only)
+  ############################################################
+  # PRESS TYPE (only used for entity mapping)
+  ############################################################
   press_type: >
-    {% if command in ['on', 'off', 'press'] %}
+    {% if command in ['on','off','press'] %}
       single
-    {% elif command in ['move', 'move_with_on_off'] %}
+    {% elif command in ['move','move_with_on_off'] %}
       long
     {% else %}
       single
     {% endif %}
 
-  ###########################################################################
-  # ENTITY RESOLUTION — FLAT INPUTS (OPTIONAL)
-  ###########################################################################
+  ############################################################
+  # ENTITY RESOLUTION (flat inputs)
+  ############################################################
 
-  # UP
   up_single_entity: !input up_single_entity
   up_double_entity: !input up_double_entity
   up_triple_entity: !input up_triple_entity
-  up_long_entity: !input up_long_entity
 
-  # DOWN
   down_single_entity: !input down_single_entity
   down_double_entity: !input down_double_entity
   down_triple_entity: !input down_triple_entity
-  down_long_entity: !input down_long_entity
 
-  # LEFT
   left_single_entity: !input left_single_entity
   left_double_entity: !input left_double_entity
   left_triple_entity: !input left_triple_entity
-  left_long_entity: !input left_long_entity
 
-  # RIGHT
   right_single_entity: !input right_single_entity
   right_double_entity: !input right_double_entity
   right_triple_entity: !input right_triple_entity
-  right_long_entity: !input right_long_entity
 
-  ###########################################################################
-  # RESOLVE THE ENTITY FOR THIS PRESS (OPTIONAL)
-  ###########################################################################
-
+  ############################################################
+  # ENTITY MAPPING (optional)
+  ############################################################
   mapped_entity: >
     {% set key = button ~ '_' ~ press_type ~ '_entity' %}
     {% set e = vars().get(key) %}
@@ -435,7 +289,6 @@ variables:
     {% else %}
       {{ e }}
     {% endif %}
-
 action:
 
   ############################################################
@@ -448,16 +301,17 @@ action:
             data:
               message: >
                 STYRBAR DEBUG —
-                command={{ trigger.event.data.command }},
-                args={{ trigger.event.data.args }},
-                cluster_id={{ trigger.event.data.cluster_id }},
+                command={{ command }},
+                args={{ args }},
+                cluster_id={{ cluster_id }},
+                button={{ button }},
                 mapped_entity={{ mapped_entity }},
                 last_entity={{ last_entity }},
                 last_domain={{ last_domain }}
               level: info
 
   ############################################################
-  # HELPER UPDATE (HU‑A — UPDATE ON EVERY PRESS)
+  # HELPER UPDATE (store last used entity)
   ############################################################
   - choose:
       - conditions: "{{ mapped_entity != 'none' }}"
@@ -474,25 +328,14 @@ action:
               value: ""
 
   ############################################################
-  # MULTI‑PRESS LOGIC (MP‑1 — UP TO 3 PRESSES)
+  # MULTI‑PRESS ENGINE (1–3 presses)
   ############################################################
   - choose:
 
       #######################################################################
-      # LONG PRESS (LEFT/RIGHT ONLY — USER ACTIONS)
-      #######################################################################
-      - conditions: "{{ command == 'press' and button in ['left', 'right'] }}"
-        sequence:
-          - choose:
-              - conditions: "{{ button == 'left' }}"
-                sequence: !input left_long_action
-              - conditions: "{{ button == 'right' }}"
-                sequence: !input right_long_action
-
-      #######################################################################
       # UP BUTTON (command: "on")
       #######################################################################
-      - conditions: "{{ command == 'on' and button == 'up' and enable_up }}"
+      - conditions: "{{ button == 'up' and command == 'on' }}"
         sequence:
           - wait_for_trigger:
               - platform: event
@@ -506,10 +349,16 @@ action:
             continue_on_timeout: true
 
           - choose:
+
+              # SINGLE
               - conditions: "{{ wait.trigger is none }}"
                 sequence: !input up_single_action
+
+              # DOUBLE / TRIPLE
               - conditions: "{{ wait.trigger is not none }}"
                 sequence:
+
+                  # Wait for third press
                   - wait_for_trigger:
                       - platform: event
                         event_type: zha_event
@@ -522,15 +371,18 @@ action:
                     continue_on_timeout: true
 
                   - choose:
+                      # DOUBLE
                       - conditions: "{{ wait.trigger is none }}"
                         sequence: !input up_double_action
+
+                      # TRIPLE
                       - conditions: "{{ wait.trigger is not none }}"
                         sequence: !input up_triple_action
 
       #######################################################################
       # DOWN BUTTON (command: "off")
       #######################################################################
-      - conditions: "{{ command == 'off' and button == 'down' and enable_down }}"
+      - conditions: "{{ button == 'down' and command == 'off' }}"
         sequence:
           - wait_for_trigger:
               - platform: event
@@ -544,10 +396,16 @@ action:
             continue_on_timeout: true
 
           - choose:
+
+              # SINGLE
               - conditions: "{{ wait.trigger is none }}"
                 sequence: !input down_single_action
+
+              # DOUBLE / TRIPLE
               - conditions: "{{ wait.trigger is not none }}"
                 sequence:
+
+                  # Wait for third press
                   - wait_for_trigger:
                       - platform: event
                         event_type: zha_event
@@ -560,18 +418,18 @@ action:
                     continue_on_timeout: true
 
                   - choose:
+                      # DOUBLE
                       - conditions: "{{ wait.trigger is none }}"
                         sequence: !input down_double_action
+
+                      # TRIPLE
                       - conditions: "{{ wait.trigger is not none }}"
                         sequence: !input down_triple_action
 
       #######################################################################
       # RIGHT BUTTON (press + args: [256, 13, 0])
       #######################################################################
-      - conditions: >
-          {{ command == 'press'
-             and button == 'right'
-             and enable_right }}
+      - conditions: "{{ button == 'right' and command == 'press' }}"
         sequence:
           - wait_for_trigger:
               - platform: event
@@ -586,10 +444,16 @@ action:
             continue_on_timeout: true
 
           - choose:
+
+              # SINGLE
               - conditions: "{{ wait.trigger is none }}"
                 sequence: !input right_single_action
+
+              # DOUBLE / TRIPLE
               - conditions: "{{ wait.trigger is not none }}"
                 sequence:
+
+                  # Wait for third press
                   - wait_for_trigger:
                       - platform: event
                         event_type: zha_event
@@ -603,18 +467,18 @@ action:
                     continue_on_timeout: true
 
                   - choose:
+                      # DOUBLE
                       - conditions: "{{ wait.trigger is none }}"
                         sequence: !input right_double_action
+
+                      # TRIPLE
                       - conditions: "{{ wait.trigger is not none }}"
                         sequence: !input right_triple_action
 
       #######################################################################
       # LEFT BUTTON (press + args: [257, 13, 0])
       #######################################################################
-      - conditions: >
-          {{ command == 'press'
-             and button == 'left'
-             and enable_left }}
+      - conditions: "{{ button == 'left' and command == 'press' }}"
         sequence:
           - wait_for_trigger:
               - platform: event
@@ -629,10 +493,16 @@ action:
             continue_on_timeout: true
 
           - choose:
+
+              # SINGLE
               - conditions: "{{ wait.trigger is none }}"
                 sequence: !input left_single_action
+
+              # DOUBLE / TRIPLE
               - conditions: "{{ wait.trigger is not none }}"
                 sequence:
+
+                  # Wait for third press
                   - wait_for_trigger:
                       - platform: event
                         event_type: zha_event
@@ -646,28 +516,29 @@ action:
                     continue_on_timeout: true
 
                   - choose:
+                      # DOUBLE
                       - conditions: "{{ wait.trigger is none }}"
                         sequence: !input left_double_action
+
+                      # TRIPLE
                       - conditions: "{{ wait.trigger is not none }}"
                         sequence: !input left_triple_action
 
   ############################################################
-  # LONG‑PRESS BRIGHTNESS / VOLUME / FLEX‑A DOMAIN LOGIC
+  # LONG‑PRESS REPEAT ENGINE (UP/DOWN only)
   ############################################################
   - choose:
 
       #######################################################################
-      # UP LONG‑PRESS — INCREASE (move_with_on_off)
+      # UP LONG‑PRESS START (move_with_on_off)
       #######################################################################
-      - conditions: >
-          {{ cluster_id == 8 and command == 'move_with_on_off' and button == 'up' }}
+      - conditions: "{{ cluster_id == 8 and command == 'move_with_on_off' }}"
         sequence:
           - repeat:
               sequence:
 
+                # LIGHT
                 - choose:
-
-                    # LIGHT
                     - conditions: "{{ last_domain == 'light' }}"
                       sequence:
                         - service: light.turn_on
@@ -728,26 +599,40 @@ action:
                           data:
                             entity_id: "{{ last_entity }}"
 
+                # STOP LISTENER
+                - wait_for_trigger:
+                    - platform: event
+                      event_type: zha_event
+                      event_data:
+                        device_id: !input remote
+                        cluster_id: 8
+                        command: stop
+                    - platform: event
+                      event_type: zha_event
+                      event_data:
+                        device_id: !input remote
+                        cluster_id: 8
+                        command: stop_with_on_off
+                  timeout: 0
+                  continue_on_timeout: false
+
                 - delay:
                     milliseconds: "{{ hold_repeat_interval }}"
 
               until:
                 - condition: template
-                  value_template: >
-                    {{ false }}  # repeat until user releases; stop handled by new trigger
+                  value_template: "{{ wait.trigger is not none }}"
 
       #######################################################################
-      # DOWN LONG‑PRESS — DECREASE (move)
+      # DOWN LONG‑PRESS START (move)
       #######################################################################
-      - conditions: >
-          {{ cluster_id == 8 and command == 'move' and button == 'down' }}
+      - conditions: "{{ cluster_id == 8 and command == 'move' }}"
         sequence:
           - repeat:
               sequence:
 
+                # LIGHT
                 - choose:
-
-                    # LIGHT
                     - conditions: "{{ last_domain == 'light' }}"
                       sequence:
                         - service: light.turn_on
@@ -808,10 +693,26 @@ action:
                           data:
                             entity_id: "{{ last_entity }}"
 
+                # STOP LISTENER
+                - wait_for_trigger:
+                    - platform: event
+                      event_type: zha_event
+                      event_data:
+                        device_id: !input remote
+                        cluster_id: 8
+                        command: stop
+                    - platform: event
+                      event_type: zha_event
+                      event_data:
+                        device_id: !input remote
+                        cluster_id: 8
+                        command: stop_with_on_off
+                  timeout: 0
+                  continue_on_timeout: false
+
                 - delay:
                     milliseconds: "{{ hold_repeat_interval }}"
 
               until:
                 - condition: template
-                  value_template: >
-                    {{ false }}  # repeat until user releases; stop handled by new trigger
+                  value_template: "{{ wait.trigger is not none }}"
