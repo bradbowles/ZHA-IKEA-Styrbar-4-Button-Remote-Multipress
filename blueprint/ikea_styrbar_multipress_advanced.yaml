@@ -1,21 +1,17 @@
 blueprint:
-  name: "ZHA Events - IKEA Styrbar 4 Button Remote - Multipress (Advanced)"
+  name: "ZHA Events - IKEA Styrbar 4 Button Remote - Multipress (Advanced, Flat Inputs)"
   description: >
-    Advanced multi-press, long-press, and context-aware brightness/volume control
-    for the IKEA Styrbar 4-button remote using ZHA. Supports 1–5 presses, long
-    press, hold-repeat, per-button entity mapping, and dynamic long-press based
-    on the last action entity. Designed for maximum flexibility with clean UI
-    grouping and explicit entity/action mapping.
+    Advanced multi-press and long-press automation for the IKEA Styrbar 4-button
+    remote using ZHA. Supports 1–5 presses, long-press, hold-repeat brightness/
+    volume control, optional entities, helper clearing, and full action mapping.
 
   domain: automation
+
   input:
 
     ############################################################
-    # Remote & Helper
+    # CORE INPUTS
     ############################################################
-
-    label_remote_helper:
-      label: "### Remote & Helper"
 
     remote:
       name: IKEA Styrbar remote control (4 buttons)
@@ -29,18 +25,12 @@ blueprint:
     last_action_helper:
       name: Last Action Helper (input_text)
       description: >
-        This input_text stores the entity used by the last button press.
-        Long-press UP/DOWN will adjust brightness/volume of this entity.
+        Stores the last entity used by any press. Long-press UP/DOWN adjusts
+        brightness/volume of this entity. If a press has no entity configured,
+        the helper is cleared.
       selector:
         entity:
           domain: input_text
-
-    ############################################################
-    # Button Enable/Disable
-    ############################################################
-
-    label_button_enable:
-      label: "### Button Enable / Disable"
 
     enable_up:
       name: Enable UP button group
@@ -66,17 +56,8 @@ blueprint:
       selector:
         boolean: {}
 
-    ############################################################
-    # Timing Settings
-    ############################################################
-
-    label_timing:
-      label: "### Timing Settings"
-
     press_timeout:
       name: Multi-press timeout (ms)
-      description: >
-        Time window for detecting multi-press sequences.
       default: 350
       selector:
         number:
@@ -88,8 +69,6 @@ blueprint:
 
     hold_repeat_interval:
       name: Hold-repeat interval (ms)
-      description: >
-        How often brightness/volume adjusts while holding UP/DOWN.
       default: 300
       selector:
         number:
@@ -98,13 +77,6 @@ blueprint:
           step: 50
           unit_of_measurement: ms
           mode: slider
-
-    ############################################################
-    # Brightness / Volume Settings
-    ############################################################
-
-    label_brightness_volume:
-      label: "### Brightness / Volume Settings"
 
     brightness_step:
       name: Brightness step (1–50)
@@ -126,13 +98,6 @@ blueprint:
           step: 0.01
           mode: slider
 
-    ############################################################
-    # Debug Settings
-    ############################################################
-
-    label_debug:
-      label: "### Debug Settings"
-
     debug_mode:
       name: Enable debug logging
       default: false
@@ -140,333 +105,323 @@ blueprint:
         boolean: {}
 
     ############################################################
-    # Action Entity Mapping
+    # UP BUTTON — ENTITY INPUTS
     ############################################################
 
-    label_action_entity_mapping:
-      label: "### Action Entity Mapping"
-
-    ############################################################
-    # UP Button Entity Mapping
-    ############################################################
-
-    up_actions:
-      name: UP button entity map
-      description: >
-        Map each UP press type to the entity it controls. The entity selected
-        here will be stored in the helper when that press type is triggered.
-        Long‑press UP will adjust brightness/volume of the last stored entity.
+    up_single_entity:
+      name: UP — Single Press Entity
       selector:
-        object:
-          properties:
-            single:
-              name: Single press entity
-              selector:
-                entity: {}
-            double:
-              name: Double press entity
-              selector:
-                entity: {}
-            triple:
-              name: Triple press entity
-              selector:
-                entity: {}
-            quadruple:
-              name: Quadruple press entity
-              selector:
-                entity: {}
-            quintuple:
-              name: Quintuple press entity
-              selector:
-                entity: {}
-            long:
-              name: Long press entity
-              selector:
-                entity: {}
+        entity: {}
+      default: ""
 
-    ############################################################
-    # DOWN Button Entity Mapping
-    ############################################################
-
-    down_actions:
-      name: DOWN button entity map
-      description: >
-        Map each DOWN press type to the entity it controls. The entity selected
-        here will be stored in the helper when that press type is triggered.
-        Long‑press DOWN will adjust brightness/volume of the last stored entity.
+    up_double_entity:
+      name: UP — Double Press Entity
       selector:
-        object:
-          properties:
-            single:
-              name: Single press entity
-              selector:
-                entity: {}
-            double:
-              name: Double press entity
-              selector:
-                entity: {}
-            triple:
-              name: Triple press entity
-              selector:
-                entity: {}
-            quadruple:
-              name: Quadruple press entity
-              selector:
-                entity: {}
-            quintuple:
-              name: Quintuple press entity
-              selector:
-                entity: {}
-            long:
-              name: Long press entity
-              selector:
-                entity: {}
+        entity: {}
+      default: ""
 
-    ############################################################
-    # LEFT Button Entity Mapping
-    ############################################################
-
-    left_actions:
-      name: LEFT button entity map
-      description: >
-        Map each LEFT press type to the entity it controls. The entity selected
-        here will be stored in the helper when that press type is triggered.
-        Long‑press LEFT does NOT adjust brightness/volume — it only runs the
-        configured action.
+    up_triple_entity:
+      name: UP — Triple Press Entity
       selector:
-        object:
-          properties:
-            single:
-              name: Single press entity
-              selector:
-                entity: {}
-            double:
-              name: Double press entity
-              selector:
-                entity: {}
-            triple:
-              name: Triple press entity
-              selector:
-                entity: {}
-            quadruple:
-              name: Quadruple press entity
-              selector:
-                entity: {}
-            quintuple:
-              name: Quintuple press entity
-              selector:
-                entity: {}
-            long:
-              name: Long press entity
-              selector:
-                entity: {}
+        entity: {}
+      default: ""
 
-    ############################################################
-    # RIGHT Button Entity Mapping
-    ############################################################
-
-    right_actions:
-      name: RIGHT button entity map
-      description: >
-        Map each RIGHT press type to the entity it controls. The entity selected
-        here will be stored in the helper when that press type is triggered.
-        Long‑press RIGHT does NOT adjust brightness/volume — it only runs the
-        configured action.
+    up_quadruple_entity:
+      name: UP — Quadruple Press Entity
       selector:
-        object:
-          properties:
-            single:
-              name: Single press entity
-              selector:
-                entity: {}
-            double:
-              name: Double press entity
-              selector:
-                entity: {}
-            triple:
-              name: Triple press entity
-              selector:
-                entity: {}
-            quadruple:
-              name: Quadruple press entity
-              selector:
-                entity: {}
-            quintuple:
-              name: Quintuple press entity
-              selector:
-                entity: {}
-            long:
-              name: Long press entity
-              selector:
-                entity: {}
+        entity: {}
+      default: ""
+
+    up_quintuple_entity:
+      name: UP — Quintuple Press Entity
+      selector:
+        entity: {}
+      default: ""
+
+    up_long_entity:
+      name: UP — Long Press Entity
+      selector:
+        entity: {}
+      default: ""
 
     ############################################################
-    # Action Selectors
+    # DOWN BUTTON — ENTITY INPUTS
     ############################################################
 
-    label_action_selectors:
-      label: "### Action Selectors"
+    down_single_entity:
+      name: DOWN — Single Press Entity
+      selector:
+        entity: {}
+      default: ""
+
+    down_double_entity:
+      name: DOWN — Double Press Entity
+      selector:
+        entity: {}
+      default: ""
+
+    down_triple_entity:
+      name: DOWN — Triple Press Entity
+      selector:
+        entity: {}
+      default: ""
+
+    down_quadruple_entity:
+      name: DOWN — Quadruple Press Entity
+      selector:
+        entity: {}
+      default: ""
+
+    down_quintuple_entity:
+      name: DOWN — Quintuple Press Entity
+      selector:
+        entity: {}
+      default: ""
+
+    down_long_entity:
+      name: DOWN — Long Press Entity
+      selector:
+        entity: {}
+      default: ""
 
     ############################################################
-    # UP Button Actions
+    # LEFT BUTTON — ENTITY INPUTS
     ############################################################
 
-    action_up_single:
+    left_single_entity:
+      name: LEFT — Single Press Entity
+      selector:
+        entity: {}
+      default: ""
+
+    left_double_entity:
+      name: LEFT — Double Press Entity
+      selector:
+        entity: {}
+      default: ""
+
+    left_triple_entity:
+      name: LEFT — Triple Press Entity
+      selector:
+        entity: {}
+      default: ""
+
+    left_quadruple_entity:
+      name: LEFT — Quadruple Press Entity
+      selector:
+        entity: {}
+      default: ""
+
+    left_quintuple_entity:
+      name: LEFT — Quintuple Press Entity
+      selector:
+        entity: {}
+      default: ""
+
+    left_long_entity:
+      name: LEFT — Long Press Entity
+      selector:
+        entity: {}
+      default: ""
+
+    ############################################################
+    # RIGHT BUTTON — ENTITY INPUTS
+    ############################################################
+
+    right_single_entity:
+      name: RIGHT — Single Press Entity
+      selector:
+        entity: {}
+      default: ""
+
+    right_double_entity:
+      name: RIGHT — Double Press Entity
+      selector:
+        entity: {}
+      default: ""
+
+    right_triple_entity:
+      name: RIGHT — Triple Press Entity
+      selector:
+        entity: {}
+      default: ""
+
+    right_quadruple_entity:
+      name: RIGHT — Quadruple Press Entity
+      selector:
+        entity: {}
+      default: ""
+
+    right_quintuple_entity:
+      name: RIGHT — Quintuple Press Entity
+      selector:
+        entity: {}
+      default: ""
+
+    right_long_entity:
+      name: RIGHT — Long Press Entity
+      selector:
+        entity: {}
+      default: ""
+    ############################################################
+    # UP BUTTON — ACTION INPUTS
+    ############################################################
+
+    up_single_action:
       name: UP — Single Press Action
       selector:
         action: {}
       default: []
 
-    action_up_double:
+    up_double_action:
       name: UP — Double Press Action
       selector:
         action: {}
       default: []
 
-    action_up_triple:
+    up_triple_action:
       name: UP — Triple Press Action
       selector:
         action: {}
       default: []
 
-    action_up_quadruple:
+    up_quadruple_action:
       name: UP — Quadruple Press Action
       selector:
         action: {}
       default: []
 
-    action_up_quintuple:
+    up_quintuple_action:
       name: UP — Quintuple Press Action
       selector:
         action: {}
       default: []
 
-    action_up_long:
+    up_long_action:
       name: UP — Long Press Action
       selector:
         action: {}
       default: []
 
     ############################################################
-    # DOWN Button Actions
+    # DOWN BUTTON — ACTION INPUTS
     ############################################################
 
-    action_down_single:
+    down_single_action:
       name: DOWN — Single Press Action
       selector:
         action: {}
       default: []
 
-    action_down_double:
+    down_double_action:
       name: DOWN — Double Press Action
       selector:
         action: {}
       default: []
 
-    action_down_triple:
+    down_triple_action:
       name: DOWN — Triple Press Action
       selector:
         action: {}
       default: []
 
-    action_down_quadruple:
+    down_quadruple_action:
       name: DOWN — Quadruple Press Action
       selector:
         action: {}
       default: []
 
-    action_down_quintuple:
+    down_quintuple_action:
       name: DOWN — Quintuple Press Action
       selector:
         action: {}
       default: []
 
-    action_down_long:
+    down_long_action:
       name: DOWN — Long Press Action
       selector:
         action: {}
       default: []
 
     ############################################################
-    # LEFT Button Actions
+    # LEFT BUTTON — ACTION INPUTS
     ############################################################
 
-    action_left_single:
+    left_single_action:
       name: LEFT — Single Press Action
       selector:
         action: {}
       default: []
 
-    action_left_double:
+    left_double_action:
       name: LEFT — Double Press Action
       selector:
         action: {}
       default: []
 
-    action_left_triple:
+    left_triple_action:
       name: LEFT — Triple Press Action
       selector:
         action: {}
       default: []
 
-    action_left_quadruple:
+    left_quadruple_action:
       name: LEFT — Quadruple Press Action
       selector:
         action: {}
       default: []
 
-    action_left_quintuple:
+    left_quintuple_action:
       name: LEFT — Quintuple Press Action
       selector:
         action: {}
       default: []
 
-    action_left_long:
+    left_long_action:
       name: LEFT — Long Press Action
       selector:
         action: {}
       default: []
 
     ############################################################
-    # RIGHT Button Actions
+    # RIGHT BUTTON — ACTION INPUTS
     ############################################################
 
-    action_right_single:
+    right_single_action:
       name: RIGHT — Single Press Action
       selector:
         action: {}
       default: []
 
-    action_right_double:
+    right_double_action:
       name: RIGHT — Double Press Action
       selector:
         action: {}
       default: []
 
-    action_right_triple:
+    right_triple_action:
       name: RIGHT — Triple Press Action
       selector:
         action: {}
       default: []
 
-    action_right_quadruple:
+    right_quadruple_action:
       name: RIGHT — Quadruple Press Action
       selector:
         action: {}
       default: []
 
-    action_right_quintuple:
+    right_quintuple_action:
       name: RIGHT — Quintuple Press Action
       selector:
         action: {}
       default: []
 
-    action_right_long:
+    right_long_action:
       name: RIGHT — Long Press Action
       selector:
         action: {}
       default: []
-
 mode: restart
 max_exceeded: silent
 
@@ -478,40 +433,48 @@ trigger:
 
 variables:
 
+  # Core settings
   press_timeout: !input press_timeout
   hold_repeat_interval: !input hold_repeat_interval
   brightness_step: !input brightness_step
   volume_step: !input volume_step
   debug: !input debug_mode
 
+  # Button enable toggles
   enable_up: !input enable_up
   enable_down: !input enable_down
   enable_left: !input enable_left
   enable_right: !input enable_right
 
-  up_map: !input up_actions
-  down_map: !input down_actions
-  left_map: !input left_actions
-  right_map: !input right_actions
+  # Helper
+  helper: !input last_action_helper
+  last_entity: "{{ states(helper) }}"
+  last_domain: >
+    {% if last_entity and '.' in last_entity %}
+      {{ last_entity.split('.')[0] }}
+    {% else %}
+      none
+    {% endif %}
 
   # Extract ZHA event fields
   command: "{{ trigger.event.data.command }}"
   args: "{{ trigger.event.data.args | default({}) }}"
 
-  # Determine button + press type
+  # Determine button pressed
   button: >
     {% if command in ['on', 'move_with_on_off', 'step_with_on_off'] %}
       up
     {% elif command in ['off', 'move', 'step'] %}
       down
-    {% elif command == 'press_1'] %}
+    {% elif command == 'press_1' %}
       left
-    {% elif command == 'press_2'] %}
+    {% elif command == 'press_2' %}
       right
     {% else %}
       unknown
     {% endif %}
 
+  # Determine press type
   press_type: >
     {% if command in ['on', 'off'] %}
       single
@@ -523,31 +486,54 @@ variables:
       single
     {% endif %}
 
-  # Extract mapped entity for this press
+  ###########################################################################
+  # ENTITY RESOLUTION — FLAT INPUTS (OPTIONAL)
+  ###########################################################################
+
+  # UP
+  up_single_entity: !input up_single_entity
+  up_double_entity: !input up_double_entity
+  up_triple_entity: !input up_triple_entity
+  up_quadruple_entity: !input up_quadruple_entity
+  up_quintuple_entity: !input up_quintuple_entity
+  up_long_entity: !input up_long_entity
+
+  # DOWN
+  down_single_entity: !input down_single_entity
+  down_double_entity: !input down_double_entity
+  down_triple_entity: !input down_triple_entity
+  down_quadruple_entity: !input down_quadruple_entity
+  down_quintuple_entity: !input down_quintuple_entity
+  down_long_entity: !input down_long_entity
+
+  # LEFT
+  left_single_entity: !input left_single_entity
+  left_double_entity: !input left_double_entity
+  left_triple_entity: !input left_triple_entity
+  left_quadruple_entity: !input left_quadruple_entity
+  left_quintuple_entity: !input left_quintuple_entity
+  left_long_entity: !input left_long_entity
+
+  # RIGHT
+  right_single_entity: !input right_single_entity
+  right_double_entity: !input right_double_entity
+  right_triple_entity: !input right_triple_entity
+  right_quadruple_entity: !input right_quadruple_entity
+  right_quintuple_entity: !input right_quintuple_entity
+  right_long_entity: !input right_long_entity
+
+  ###########################################################################
+  # RESOLVE THE ENTITY FOR THIS PRESS (OPTIONAL)
+  ###########################################################################
+
   mapped_entity: >
-    {% set m = {
-      'up': up_map,
-      'down': down_map,
-      'left': left_map,
-      'right': right_map
-    } %}
-    {% set group = m.get(button, {}) %}
-    {{ group.get(press_type) }}
-
-  # Helper entity
-  helper: !input last_action_helper
-
-  # Last stored entity
-  last_entity: "{{ states(helper) }}"
-
-  # Domain of last entity
-  last_domain: >
-    {% if last_entity and '.' in last_entity %}
-      {{ last_entity.split('.')[0] }}
-    {% else %}
+    {% set key = button ~ '_' ~ press_type ~ '_entity' %}
+    {% set e = vars()[key] %}
+    {% if e in ['', None] %}
       none
+    {% else %}
+      {{ e }}
     {% endif %}
-
 action:
 
   ############################################################
@@ -568,104 +554,128 @@ action:
               level: info
 
   ############################################################
-  # UPDATE HELPER WITH MAPPED ENTITY
+  # HELPER UPDATE (H2 — CLEAR WHEN ENTITY MISSING)
   ############################################################
   - choose:
-      - conditions: "{{ mapped_entity not in ['', None] }}"
+
+      # If entity is configured → store it
+      - conditions: "{{ mapped_entity != 'none' }}"
         sequence:
           - service: input_text.set_value
             data:
               entity_id: "{{ helper }}"
               value: "{{ mapped_entity }}"
 
+      # If entity is missing → clear helper
+      - conditions: "{{ mapped_entity == 'none' }}"
+        sequence:
+          - service: input_text.set_value
+            data:
+              entity_id: "{{ helper }}"
+              value: ""
+
   ############################################################
-  # RUN USER ACTIONS
+  # RUN USER ACTIONS (ONLY IF ENTITY EXISTS OR ACTION EXISTS)
   ############################################################
   - choose:
 
-      # UP
+      #######################################################################
+      # UP BUTTON
+      #######################################################################
       - conditions: "{{ button == 'up' and enable_up }}"
         sequence:
           - choose:
               - conditions: "{{ press_type == 'single' }}"
-                sequence: !input action_up_single
+                sequence: !input up_single_action
               - conditions: "{{ press_type == 'double' }}"
-                sequence: !input action_up_double
+                sequence: !input up_double_action
               - conditions: "{{ press_type == 'triple' }}"
-                sequence: !input action_up_triple
+                sequence: !input up_triple_action
               - conditions: "{{ press_type == 'quadruple' }}"
-                sequence: !input action_up_quadruple
+                sequence: !input up_quadruple_action
               - conditions: "{{ press_type == 'quintuple' }}"
-                sequence: !input action_up_quintuple
+                sequence: !input up_quintuple_action
               - conditions: "{{ press_type == 'long' }}"
-                sequence: !input action_up_long
+                sequence: !input up_long_action
 
-      # DOWN
+      #######################################################################
+      # DOWN BUTTON
+      #######################################################################
       - conditions: "{{ button == 'down' and enable_down }}"
         sequence:
           - choose:
               - conditions: "{{ press_type == 'single' }}"
-                sequence: !input action_down_single
+                sequence: !input down_single_action
               - conditions: "{{ press_type == 'double' }}"
-                sequence: !input action_down_double
+                sequence: !input down_double_action
               - conditions: "{{ press_type == 'triple' }}"
-                sequence: !input action_down_triple
+                sequence: !input down_triple_action
               - conditions: "{{ press_type == 'quadruple' }}"
-                sequence: !input action_down_quadruple
+                sequence: !input down_quadruple_action
               - conditions: "{{ press_type == 'quintuple' }}"
-                sequence: !input action_down_quintuple
+                sequence: !input down_quintuple_action
               - conditions: "{{ press_type == 'long' }}"
-                sequence: !input action_down_long
+                sequence: !input down_long_action
 
-      # LEFT
+      #######################################################################
+      # LEFT BUTTON
+      #######################################################################
       - conditions: "{{ button == 'left' and enable_left }}"
         sequence:
           - choose:
               - conditions: "{{ press_type == 'single' }}"
-                sequence: !input action_left_single
+                sequence: !input left_single_action
               - conditions: "{{ press_type == 'double' }}"
-                sequence: !input action_left_double
+                sequence: !input left_double_action
               - conditions: "{{ press_type == 'triple' }}"
-                sequence: !input action_left_triple
+                sequence: !input left_triple_action
               - conditions: "{{ press_type == 'quadruple' }}"
-                sequence: !input action_left_quadruple
+                sequence: !input left_quadruple_action
               - conditions: "{{ press_type == 'quintuple' }}"
-                sequence: !input action_left_quintuple
+                sequence: !input left_quintuple_action
               - conditions: "{{ press_type == 'long' }}"
-                sequence: !input action_left_long
+                sequence: !input left_long_action
 
-      # RIGHT
+      #######################################################################
+      # RIGHT BUTTON
+      #######################################################################
       - conditions: "{{ button == 'right' and enable_right }}"
         sequence:
           - choose:
               - conditions: "{{ press_type == 'single' }}"
-                sequence: !input action_right_single
+                sequence: !input right_single_action
               - conditions: "{{ press_type == 'double' }}"
-                sequence: !input action_right_double
+                sequence: !input right_double_action
               - conditions: "{{ press_type == 'triple' }}"
-                sequence: !input action_right_triple
+                sequence: !input right_triple_action
               - conditions: "{{ press_type == 'quadruple' }}"
-                sequence: !input action_right_quadruple
+                sequence: !input right_quadruple_action
               - conditions: "{{ press_type == 'quintuple' }}"
-                sequence: !input action_right_quintuple
+                sequence: !input right_quintuple_action
               - conditions: "{{ press_type == 'long' }}"
-                sequence: !input action_right_long
+                sequence: !input right_long_action
 
   ############################################################
-  # LONG-PRESS UP/DOWN — BRIGHTNESS / VOLUME CONTROL
+  # LONG-PRESS BRIGHTNESS / VOLUME CONTROL
   ############################################################
 
   - choose:
 
+      #######################################################################
       # LONG PRESS UP — BRIGHTNESS UP / VOLUME UP
-      - conditions: "{{ button == 'up' and press_type == 'long' }}"
+      #######################################################################
+      - conditions: >
+          {{ button == 'up'
+             and press_type == 'long'
+             and last_entity not in ['', None]
+             and last_domain in ['light', 'media_player'] }}
         sequence:
           - repeat:
               until: "{{ command not in ['move_with_on_off', 'move'] }}"
               sequence:
-                - choose:
 
-                    # LIGHT BRIGHTNESS UP
+                # LIGHT BRIGHTNESS UP
+                - choose:
                     - conditions: "{{ last_domain == 'light' }}"
                       sequence:
                         - service: light.turn_on
@@ -673,7 +683,8 @@ action:
                             entity_id: "{{ last_entity }}"
                             brightness_step_pct: "{{ brightness_step }}"
 
-                    # MEDIA PLAYER VOLUME UP
+                # MEDIA PLAYER VOLUME UP
+                - choose:
                     - conditions: "{{ last_domain == 'media_player' }}"
                       sequence:
                         - service: media_player.volume_set
@@ -681,22 +692,30 @@ action:
                             entity_id: "{{ last_entity }}"
                             volume_level: >
                               {{
-                                [ (state_attr(last_entity, 'volume_level') | float(0)) + volume_step, 1 ]
-                                | min
+                                [
+                                  (state_attr(last_entity, 'volume_level') | float(0)) + volume_step,
+                                  1
+                                ] | min
                               }}
 
                 - delay:
                     milliseconds: "{{ hold_repeat_interval }}"
 
+      #######################################################################
       # LONG PRESS DOWN — BRIGHTNESS DOWN / VOLUME DOWN
-      - conditions: "{{ button == 'down' and press_type == 'long' }}"
+      #######################################################################
+      - conditions: >
+          {{ button == 'down'
+             and press_type == 'long'
+             and last_entity not in ['', None]
+             and last_domain in ['light', 'media_player'] }}
         sequence:
           - repeat:
               until: "{{ command not in ['move_with_on_off', 'move'] }}"
               sequence:
-                - choose:
 
-                    # LIGHT BRIGHTNESS DOWN
+                # LIGHT BRIGHTNESS DOWN
+                - choose:
                     - conditions: "{{ last_domain == 'light' }}"
                       sequence:
                         - service: light.turn_on
@@ -704,7 +723,8 @@ action:
                             entity_id: "{{ last_entity }}"
                             brightness_step_pct: "-{{ brightness_step }}"
 
-                    # MEDIA PLAYER VOLUME DOWN
+                # MEDIA PLAYER VOLUME DOWN
+                - choose:
                     - conditions: "{{ last_domain == 'media_player' }}"
                       sequence:
                         - service: media_player.volume_set
@@ -712,8 +732,10 @@ action:
                             entity_id: "{{ last_entity }}"
                             volume_level: >
                               {{
-                                [ (state_attr(last_entity, 'volume_level') | float(0)) - volume_step, 0 ]
-                                | max
+                                [
+                                  (state_attr(last_entity, 'volume_level') | float(0)) - volume_step,
+                                  0
+                                ] | max
                               }}
 
                 - delay:
