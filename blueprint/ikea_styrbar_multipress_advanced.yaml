@@ -1,10 +1,10 @@
 blueprint:
   name: "ZHA - IKEA Styrbar N2 (4-Button) — Multipress 1–3 + UP/DOWN Long-Press Repeat"
   description: >
-    Fully-corrected Styrbar N2 blueprint using the real ZHA event model.
-    Supports single/double/triple press on all buttons, UP/DOWN long-press
-    brightness/volume repeat, LEFT/RIGHT long-press ignored,
-    optional entity mapping, helper tracking, and clean UI.
+    Styrbar N2 blueprint using the proven mode: single + wait_for_trigger
+    multi-press pattern. Supports 1–3 presses on all four buttons, UP/DOWN
+    long-press brightness/volume repeat, optional entity mapping via
+    input_text helper, and debug logging.
 
   domain: automation
 
@@ -20,19 +20,21 @@ blueprint:
 
     last_action_helper:
       name: Last Action Helper (input_text)
+      description: Stores the last entity used so long-press UP/DOWN knows what to control.
       selector:
         entity:
           domain: input_text
 
     press_timeout:
       name: Multi-press timeout (ms)
-      default: 350
+      default: 500
       selector:
         number:
-          min: 150
-          max: 1000
-          step: 50
-          unit_of_measurement: ms
+          min: 100
+          max: 2000
+          step: 100
+          unit_of_measurement: milliseconds
+          mode: slider
 
     hold_repeat_interval:
       name: Long-press repeat interval (ms)
@@ -54,7 +56,7 @@ blueprint:
           step: 1
 
     volume_step:
-      name: Volume step (0.01–0.20)
+      name: Volume step (0.01-0.20)
       default: 0.05
       selector:
         number:
@@ -73,62 +75,62 @@ blueprint:
     ############################################################
 
     up_single_entity:
-      name: UP — Single Press Entity
+      name: UP - Single Press Entity
       selector: { entity: {} }
       default: ""
 
     up_double_entity:
-      name: UP — Double Press Entity
+      name: UP - Double Press Entity
       selector: { entity: {} }
       default: ""
 
     up_triple_entity:
-      name: UP — Triple Press Entity
+      name: UP - Triple Press Entity
       selector: { entity: {} }
       default: ""
 
     down_single_entity:
-      name: DOWN — Single Press Entity
+      name: DOWN - Single Press Entity
       selector: { entity: {} }
       default: ""
 
     down_double_entity:
-      name: DOWN — Double Press Entity
+      name: DOWN - Double Press Entity
       selector: { entity: {} }
       default: ""
 
     down_triple_entity:
-      name: DOWN — Triple Press Entity
+      name: DOWN - Triple Press Entity
       selector: { entity: {} }
       default: ""
 
     left_single_entity:
-      name: LEFT — Single Press Entity
+      name: LEFT - Single Press Entity
       selector: { entity: {} }
       default: ""
 
     left_double_entity:
-      name: LEFT — Double Press Entity
+      name: LEFT - Double Press Entity
       selector: { entity: {} }
       default: ""
 
     left_triple_entity:
-      name: LEFT — Triple Press Entity
+      name: LEFT - Triple Press Entity
       selector: { entity: {} }
       default: ""
 
     right_single_entity:
-      name: RIGHT — Single Press Entity
+      name: RIGHT - Single Press Entity
       selector: { entity: {} }
       default: ""
 
     right_double_entity:
-      name: RIGHT — Double Press Entity
+      name: RIGHT - Double Press Entity
       selector: { entity: {} }
       default: ""
 
     right_triple_entity:
-      name: RIGHT — Triple Press Entity
+      name: RIGHT - Triple Press Entity
       selector: { entity: {} }
       default: ""
 
@@ -137,85 +139,112 @@ blueprint:
     ############################################################
 
     up_single_action:
-      name: UP — Single Press Action
+      name: UP - Single Press Action
       selector: { action: {} }
       default: []
 
     up_double_action:
-      name: UP — Double Press Action
+      name: UP - Double Press Action
       selector: { action: {} }
       default: []
 
     up_triple_action:
-      name: UP — Triple Press Action
+      name: UP - Triple Press Action
       selector: { action: {} }
       default: []
 
     down_single_action:
-      name: DOWN — Single Press Action
+      name: DOWN - Single Press Action
       selector: { action: {} }
       default: []
 
     down_double_action:
-      name: DOWN — Double Press Action
+      name: DOWN - Double Press Action
       selector: { action: {} }
       default: []
 
     down_triple_action:
-      name: DOWN — Triple Press Action
+      name: DOWN - Triple Press Action
       selector: { action: {} }
       default: []
 
     left_single_action:
-      name: LEFT — Single Press Action
+      name: LEFT - Single Press Action
       selector: { action: {} }
       default: []
 
     left_double_action:
-      name: LEFT — Double Press Action
+      name: LEFT - Double Press Action
       selector: { action: {} }
       default: []
 
     left_triple_action:
-      name: LEFT — Triple Press Action
+      name: LEFT - Triple Press Action
       selector: { action: {} }
       default: []
 
     right_single_action:
-      name: RIGHT — Single Press Action
+      name: RIGHT - Single Press Action
       selector: { action: {} }
       default: []
 
     right_double_action:
-      name: RIGHT — Double Press Action
+      name: RIGHT - Double Press Action
       selector: { action: {} }
       default: []
 
     right_triple_action:
-      name: RIGHT — Triple Press Action
+      name: RIGHT - Triple Press Action
       selector: { action: {} }
       default: []
 
-mode: restart
+# mode: single is the key to multi-press working correctly.
+# The first run's wait_for_trigger catches the ZHA event directly,
+# even though the automation-level trigger is suppressed for the
+# second press. mode: restart would kill the waiting run.
+mode: single
 max_exceeded: silent
 
 trigger:
-  - platform: event
+  - trigger: event
     event_type: zha_event
     event_data:
       device_id: !input remote
 
-variables:
+# Only handle the commands we care about — ignore move/stop noise
+# unless it is a long-press cluster 8 event
+conditions:
+  - condition: template
+    value_template: >
+      {{ trigger.event.data.command in ['on', 'off', 'press', 'release',
+         'move_with_on_off', 'move', 'stop_with_on_off', 'stop'] }}
 
-  press_timeout: !input press_timeout
-  hold_repeat_interval: !input hold_repeat_interval
+variables:
+  helper: !input last_action_helper
   brightness_step: !input brightness_step
   volume_step: !input volume_step
+  hold_repeat_interval: !input hold_repeat_interval
   debug: !input debug_mode
 
-  helper: !input last_action_helper
+  command: "{{ trigger.event.data.command }}"
+  cluster_id: "{{ trigger.event.data.cluster_id | default(-1) | int }}"
+  args: "{{ trigger.event.data.args | default([]) | list }}"
 
-  # Snapshot last tracked entity from the helper at trigger time
+  # Entity inputs resolved for dict lookup
+  up_single_entity:    !input up_single_entity
+  up_double_entity:    !input up_double_entity
+  up_triple_entity:    !input up_triple_entity
+  down_single_entity:  !input down_single_entity
+  down_double_entity:  !input down_double_entity
+  down_triple_entity:  !input down_triple_entity
+  left_single_entity:  !input left_single_entity
+  left_double_entity:  !input left_double_entity
+  left_triple_entity:  !input left_triple_entity
+  right_single_entity: !input right_single_entity
+  right_double_entity: !input right_double_entity
+  right_triple_entity: !input right_triple_entity
+
+  # Last entity stored in helper (for long-press targeting)
   last_entity: "{{ states(helper) }}"
   last_domain: >
     {% if last_entity and '.' in last_entity %}
@@ -224,300 +253,293 @@ variables:
       none
     {% endif %}
 
-  command: "{{ trigger.event.data.command }}"
-  # Normalize args to a list of ints for reliable comparison
-  args: "{{ trigger.event.data.args | default([]) | list }}"
-  cluster_id: "{{ trigger.event.data.cluster_id | default(-1) | int }}"
-
-  ############################################################
-  # BUTTON DETECTION — REAL ZHA MODEL
-  ############################################################
-  button: >
-    {% set c = cluster_id | int %}
-    {% set cmd = command %}
-    {% if c == 6 and cmd == 'on' %}
-      up
-    {% elif c == 6 and cmd == 'off' %}
-      down
-    {% elif c == 5 and cmd == 'press' and args | length == 3 and args[0] | int == 257 %}
-      left
-    {% elif c == 5 and cmd == 'press' and args | length == 3 and args[0] | int == 256 %}
-      right
-    {% elif c == 8 and cmd in ['move_with_on_off', 'stop_with_on_off'] %}
-      up
-    {% elif c == 8 and cmd in ['move', 'stop'] %}
-      down
-    {% else %}
-      unknown
-    {% endif %}
-
-  ############################################################
-  # ENTITY INPUTS (resolved to variables for mapping)
-  ############################################################
-
-  up_single_entity: !input up_single_entity
-  up_double_entity: !input up_double_entity
-  up_triple_entity: !input up_triple_entity
-
-  down_single_entity: !input down_single_entity
-  down_double_entity: !input down_double_entity
-  down_triple_entity: !input down_triple_entity
-
-  left_single_entity: !input left_single_entity
-  left_double_entity: !input left_double_entity
-  left_triple_entity: !input left_triple_entity
-
-  right_single_entity: !input right_single_entity
-  right_double_entity: !input right_double_entity
-  right_triple_entity: !input right_triple_entity
-
-  ############################################################
-  # ENTITY MAPPING — fixed: no vars(), use explicit dict lookup
-  ############################################################
-  press_type: >
-    {% if command in ['on', 'off', 'press'] %}
-      single
-    {% elif command in ['move', 'move_with_on_off'] %}
-      long
-    {% else %}
-      single
-    {% endif %}
-
-  mapped_entity: >
-    {% set map = {
-      'up_single':    up_single_entity,
-      'up_double':    up_double_entity,
-      'up_triple':    up_triple_entity,
-      'down_single':  down_single_entity,
-      'down_double':  down_double_entity,
-      'down_triple':  down_triple_entity,
-      'left_single':  left_single_entity,
-      'left_double':  left_double_entity,
-      'left_triple':  left_triple_entity,
-      'right_single': right_single_entity,
-      'right_double': right_double_entity,
-      'right_triple': right_triple_entity
-    } %}
-    {% set key = button ~ '_' ~ press_type %}
-    {% set e = map.get(key, '') %}
-    {% if e in ['', None] %}
-      none
-    {% else %}
-      {{ e }}
-    {% endif %}
-
-action:
+actions:
 
   ############################################################
   # DEBUG LOGGING
   ############################################################
-  - choose:
-      - conditions: "{{ debug }}"
-        sequence:
-          - service: system_log.write
-            data:
-              message: >
-                STYRBAR DEBUG —
-                command={{ command }},
-                args={{ args }},
-                cluster_id={{ cluster_id }},
-                button={{ button }},
-                mapped_entity={{ mapped_entity }},
-                last_entity={{ last_entity }},
-                last_domain={{ last_domain }}
-              level: info
+  - if: "{{ debug }}"
+    then:
+      - service: system_log.write
+        data:
+          message: >
+            STYRBAR DEBUG — command={{ command }}, cluster_id={{ cluster_id }},
+            args={{ args }}, last_entity={{ last_entity }}, last_domain={{ last_domain }}
+          level: info
 
-  ############################################################
-  # HELPER UPDATE (store last used entity)
-  ############################################################
-  - choose:
-      - conditions: "{{ mapped_entity != 'none' }}"
-        sequence:
-          - service: input_text.set_value
-            data:
-              entity_id: "{{ helper }}"
-              value: "{{ mapped_entity }}"
-
-  ############################################################
-  # MULTI-PRESS ENGINE (1–3 presses)
-  ############################################################
   - choose:
 
-      #######################################################################
+      ##################################################################
       # UP BUTTON — short press (cluster 6, command "on")
-      #######################################################################
-      - conditions: "{{ cluster_id == 6 and command == 'on' }}"
+      ##################################################################
+      - conditions:
+          - condition: template
+            value_template: "{{ command == 'on' }}"
         sequence:
+
+          # Update helper with single-press entity if configured
+          - if: "{{ up_single_entity not in ['', None] }}"
+            then:
+              - service: input_text.set_value
+                data:
+                  entity_id: "{{ helper }}"
+                  value: "{{ up_single_entity }}"
+
           - wait_for_trigger:
-              - platform: event
+              - trigger: event
                 event_type: zha_event
                 event_data:
                   device_id: !input remote
-                  cluster_id: 6
                   command: "on"
             timeout:
               milliseconds: !input press_timeout
             continue_on_timeout: true
 
-          - choose:
-              # SINGLE — timed out waiting for a second press
-              - conditions: "{{ wait.trigger is none }}"
-                sequence: !input up_single_action
+          - if:
+              - condition: template
+                value_template: "{{ wait.trigger is none }}"
+            then:
+              # SINGLE
+              sequence: !input up_single_action
+            else:
+              # 2+ presses — update helper to double entity if configured
+              sequence:
+                - if: "{{ up_double_entity not in ['', None] }}"
+                  then:
+                    - service: input_text.set_value
+                      data:
+                        entity_id: "{{ helper }}"
+                        value: "{{ up_double_entity }}"
 
-              # Possible DOUBLE or TRIPLE — got a second press
-              - conditions: "{{ wait.trigger is not none }}"
-                sequence:
-                  - wait_for_trigger:
-                      - platform: event
-                        event_type: zha_event
-                        event_data:
-                          device_id: !input remote
-                          cluster_id: 6
-                          command: "on"
-                    timeout:
-                      milliseconds: !input press_timeout
-                    continue_on_timeout: true
+                - wait_for_trigger:
+                    - trigger: event
+                      event_type: zha_event
+                      event_data:
+                        device_id: !input remote
+                        command: "on"
+                  timeout:
+                    milliseconds: !input press_timeout
+                  continue_on_timeout: true
 
-                  - choose:
-                      # DOUBLE — timed out waiting for a third press
-                      - conditions: "{{ wait.trigger is none }}"
-                        sequence: !input up_double_action
+                - if:
+                    - condition: template
+                      value_template: "{{ wait.trigger is none }}"
+                  then:
+                    # DOUBLE
+                    sequence: !input up_double_action
+                  else:
+                    # TRIPLE
+                    sequence:
+                      - if: "{{ up_triple_entity not in ['', None] }}"
+                        then:
+                          - service: input_text.set_value
+                            data:
+                              entity_id: "{{ helper }}"
+                              value: "{{ up_triple_entity }}"
+                      - sequence: !input up_triple_action
 
-                      # TRIPLE
-                      - conditions: "{{ wait.trigger is not none }}"
-                        sequence: !input up_triple_action
-
-      #######################################################################
+      ##################################################################
       # DOWN BUTTON — short press (cluster 6, command "off")
-      #######################################################################
-      - conditions: "{{ cluster_id == 6 and command == 'off' }}"
+      ##################################################################
+      - conditions:
+          - condition: template
+            value_template: "{{ command == 'off' }}"
         sequence:
+
+          - if: "{{ down_single_entity not in ['', None] }}"
+            then:
+              - service: input_text.set_value
+                data:
+                  entity_id: "{{ helper }}"
+                  value: "{{ down_single_entity }}"
+
           - wait_for_trigger:
-              - platform: event
+              - trigger: event
                 event_type: zha_event
                 event_data:
                   device_id: !input remote
-                  cluster_id: 6
                   command: "off"
             timeout:
               milliseconds: !input press_timeout
             continue_on_timeout: true
 
-          - choose:
-              - conditions: "{{ wait.trigger is none }}"
-                sequence: !input down_single_action
+          - if:
+              - condition: template
+                value_template: "{{ wait.trigger is none }}"
+            then:
+              sequence: !input down_single_action
+            else:
+              sequence:
+                - if: "{{ down_double_entity not in ['', None] }}"
+                  then:
+                    - service: input_text.set_value
+                      data:
+                        entity_id: "{{ helper }}"
+                        value: "{{ down_double_entity }}"
 
-              - conditions: "{{ wait.trigger is not none }}"
-                sequence:
-                  - wait_for_trigger:
-                      - platform: event
-                        event_type: zha_event
-                        event_data:
-                          device_id: !input remote
-                          cluster_id: 6
-                          command: "off"
-                    timeout:
-                      milliseconds: !input press_timeout
-                    continue_on_timeout: true
+                - wait_for_trigger:
+                    - trigger: event
+                      event_type: zha_event
+                      event_data:
+                        device_id: !input remote
+                        command: "off"
+                  timeout:
+                    milliseconds: !input press_timeout
+                  continue_on_timeout: true
 
-                  - choose:
-                      - conditions: "{{ wait.trigger is none }}"
-                        sequence: !input down_double_action
+                - if:
+                    - condition: template
+                      value_template: "{{ wait.trigger is none }}"
+                  then:
+                    sequence: !input down_double_action
+                  else:
+                    sequence:
+                      - if: "{{ down_triple_entity not in ['', None] }}"
+                        then:
+                          - service: input_text.set_value
+                            data:
+                              entity_id: "{{ helper }}"
+                              value: "{{ down_triple_entity }}"
+                      - sequence: !input down_triple_action
 
-                      - conditions: "{{ wait.trigger is not none }}"
-                        sequence: !input down_triple_action
-
-      #######################################################################
-      # RIGHT BUTTON (cluster 5, args[0] == 256)
-      #######################################################################
-      - conditions: "{{ cluster_id == 5 and command == 'press' and args | length == 3 and args[0] | int == 256 }}"
+      ##################################################################
+      # RIGHT BUTTON (cluster 5, args [256, 13, 0])
+      ##################################################################
+      - conditions:
+          - condition: template
+            value_template: "{{ command == 'press' and trigger.event.data.args == [256, 13, 0] }}"
         sequence:
+
+          - if: "{{ right_single_entity not in ['', None] }}"
+            then:
+              - service: input_text.set_value
+                data:
+                  entity_id: "{{ helper }}"
+                  value: "{{ right_single_entity }}"
+
           - wait_for_trigger:
-              - platform: event
+              - trigger: event
                 event_type: zha_event
                 event_data:
                   device_id: !input remote
-                  cluster_id: 5
                   command: press
+                  args: [256, 13, 0]
             timeout:
               milliseconds: !input press_timeout
             continue_on_timeout: true
 
-          - choose:
-              - conditions: "{{ wait.trigger is none }}"
-                sequence: !input right_single_action
+          - if:
+              - condition: template
+                value_template: "{{ wait.trigger is none }}"
+            then:
+              sequence: !input right_single_action
+            else:
+              sequence:
+                - if: "{{ right_double_entity not in ['', None] }}"
+                  then:
+                    - service: input_text.set_value
+                      data:
+                        entity_id: "{{ helper }}"
+                        value: "{{ right_double_entity }}"
 
-              - conditions: "{{ wait.trigger is not none }}"
-                sequence:
-                  - wait_for_trigger:
-                      - platform: event
-                        event_type: zha_event
-                        event_data:
-                          device_id: !input remote
-                          cluster_id: 5
-                          command: press
-                    timeout:
-                      milliseconds: !input press_timeout
-                    continue_on_timeout: true
+                - wait_for_trigger:
+                    - trigger: event
+                      event_type: zha_event
+                      event_data:
+                        device_id: !input remote
+                        command: press
+                        args: [256, 13, 0]
+                  timeout:
+                    milliseconds: !input press_timeout
+                  continue_on_timeout: true
 
-                  - choose:
-                      - conditions: "{{ wait.trigger is none }}"
-                        sequence: !input right_double_action
+                - if:
+                    - condition: template
+                      value_template: "{{ wait.trigger is none }}"
+                  then:
+                    sequence: !input right_double_action
+                  else:
+                    sequence:
+                      - if: "{{ right_triple_entity not in ['', None] }}"
+                        then:
+                          - service: input_text.set_value
+                            data:
+                              entity_id: "{{ helper }}"
+                              value: "{{ right_triple_entity }}"
+                      - sequence: !input right_triple_action
 
-                      - conditions: "{{ wait.trigger is not none }}"
-                        sequence: !input right_triple_action
-
-      #######################################################################
-      # LEFT BUTTON (cluster 5, args[0] == 257)
-      #######################################################################
-      - conditions: "{{ cluster_id == 5 and command == 'press' and args | length == 3 and args[0] | int == 257 }}"
+      ##################################################################
+      # LEFT BUTTON (cluster 5, args [257, 13, 0])
+      ##################################################################
+      - conditions:
+          - condition: template
+            value_template: "{{ command == 'press' and trigger.event.data.args == [257, 13, 0] }}"
         sequence:
+
+          - if: "{{ left_single_entity not in ['', None] }}"
+            then:
+              - service: input_text.set_value
+                data:
+                  entity_id: "{{ helper }}"
+                  value: "{{ left_single_entity }}"
+
           - wait_for_trigger:
-              - platform: event
+              - trigger: event
                 event_type: zha_event
                 event_data:
                   device_id: !input remote
-                  cluster_id: 5
                   command: press
+                  args: [257, 13, 0]
             timeout:
               milliseconds: !input press_timeout
             continue_on_timeout: true
 
-          - choose:
-              - conditions: "{{ wait.trigger is none }}"
-                sequence: !input left_single_action
+          - if:
+              - condition: template
+                value_template: "{{ wait.trigger is none }}"
+            then:
+              sequence: !input left_single_action
+            else:
+              sequence:
+                - if: "{{ left_double_entity not in ['', None] }}"
+                  then:
+                    - service: input_text.set_value
+                      data:
+                        entity_id: "{{ helper }}"
+                        value: "{{ left_double_entity }}"
 
-              - conditions: "{{ wait.trigger is not none }}"
-                sequence:
-                  - wait_for_trigger:
-                      - platform: event
-                        event_type: zha_event
-                        event_data:
-                          device_id: !input remote
-                          cluster_id: 5
-                          command: press
-                    timeout:
-                      milliseconds: !input press_timeout
-                    continue_on_timeout: true
+                - wait_for_trigger:
+                    - trigger: event
+                      event_type: zha_event
+                      event_data:
+                        device_id: !input remote
+                        command: press
+                        args: [257, 13, 0]
+                  timeout:
+                    milliseconds: !input press_timeout
+                  continue_on_timeout: true
 
-                  - choose:
-                      - conditions: "{{ wait.trigger is none }}"
-                        sequence: !input left_double_action
+                - if:
+                    - condition: template
+                      value_template: "{{ wait.trigger is none }}"
+                  then:
+                    sequence: !input left_double_action
+                  else:
+                    sequence:
+                      - if: "{{ left_triple_entity not in ['', None] }}"
+                        then:
+                          - service: input_text.set_value
+                            data:
+                              entity_id: "{{ helper }}"
+                              value: "{{ left_triple_entity }}"
+                      - sequence: !input left_triple_action
 
-                      - conditions: "{{ wait.trigger is not none }}"
-                        sequence: !input left_triple_action
-
-  ############################################################
-  # LONG-PRESS REPEAT ENGINE (UP / DOWN only)
-  # Fixed: the stop-listener is moved OUTSIDE the repeat body
-  # and controls an until: loop properly.
-  ############################################################
-  - choose:
-
-      #######################################################################
+      ##################################################################
       # UP LONG-PRESS (cluster 8, move_with_on_off)
-      #######################################################################
-      - conditions: "{{ cluster_id == 8 and command == 'move_with_on_off' }}"
+      ##################################################################
+      - conditions:
+          - condition: template
+            value_template: "{{ cluster_id == 8 and command == 'move_with_on_off' }}"
         sequence:
           - repeat:
               sequence:
@@ -535,10 +557,7 @@ action:
                           data:
                             entity_id: "{{ last_entity }}"
                             volume_level: >
-                              {{ [
-                                (state_attr(last_entity, 'volume_level') | float(0)) + (volume_step | float),
-                                1.0
-                              ] | min }}
+                              {{ [ (state_attr(last_entity, 'volume_level') | float(0)) + (volume_step | float), 1.0 ] | min }}
 
                     - conditions: "{{ last_domain == 'fan' }}"
                       sequence:
@@ -546,10 +565,7 @@ action:
                           data:
                             entity_id: "{{ last_entity }}"
                             percentage: >
-                              {{ [
-                                (state_attr(last_entity, 'percentage') | float(0)) + (brightness_step | int),
-                                100
-                              ] | min }}
+                              {{ [ (state_attr(last_entity, 'percentage') | float(0)) + (brightness_step | int), 100 ] | min }}
 
                     - conditions: "{{ last_domain == 'climate' }}"
                       sequence:
@@ -571,39 +587,32 @@ action:
                           data:
                             entity_id: "{{ last_entity }}"
 
-                # Pause between repeats, then loop will re-check until:
-                - delay:
-                    milliseconds: "{{ hold_repeat_interval | int }}"
+                # Wait for stop or repeat interval — whichever comes first
+                - wait_for_trigger:
+                    - trigger: event
+                      event_type: zha_event
+                      event_data:
+                        device_id: !input remote
+                        command: stop_with_on_off
+                    - trigger: event
+                      event_type: zha_event
+                      event_data:
+                        device_id: !input remote
+                        command: stop
+                  timeout:
+                    milliseconds: !input hold_repeat_interval
+                  continue_on_timeout: true
 
               until:
-                # Loop runs indefinitely; mode: restart terminates it when
-                # the stop/stop_with_on_off event fires a new automation run.
                 - condition: template
-                  value_template: "{{ false }}"
+                  value_template: "{{ wait.trigger is not none }}"
 
-          # Actually wait for the hardware stop event so mode:restart
-          # doesn't kill us prematurely
-          - wait_for_trigger:
-              - platform: event
-                event_type: zha_event
-                event_data:
-                  device_id: !input remote
-                  cluster_id: 8
-                  command: stop_with_on_off
-              - platform: event
-                event_type: zha_event
-                event_data:
-                  device_id: !input remote
-                  cluster_id: 8
-                  command: stop
-            timeout:
-              seconds: 10
-            continue_on_timeout: true
-
-      #######################################################################
+      ##################################################################
       # DOWN LONG-PRESS (cluster 8, move)
-      #######################################################################
-      - conditions: "{{ cluster_id == 8 and command == 'move' }}"
+      ##################################################################
+      - conditions:
+          - condition: template
+            value_template: "{{ cluster_id == 8 and command == 'move' }}"
         sequence:
           - repeat:
               sequence:
@@ -621,10 +630,7 @@ action:
                           data:
                             entity_id: "{{ last_entity }}"
                             volume_level: >
-                              {{ [
-                                (state_attr(last_entity, 'volume_level') | float(0)) - (volume_step | float),
-                                0.0
-                              ] | max }}
+                              {{ [ (state_attr(last_entity, 'volume_level') | float(0)) - (volume_step | float), 0.0 ] | max }}
 
                     - conditions: "{{ last_domain == 'fan' }}"
                       sequence:
@@ -632,10 +638,7 @@ action:
                           data:
                             entity_id: "{{ last_entity }}"
                             percentage: >
-                              {{ [
-                                (state_attr(last_entity, 'percentage') | float(0)) - (brightness_step | int),
-                                0
-                              ] | max }}
+                              {{ [ (state_attr(last_entity, 'percentage') | float(0)) - (brightness_step | int), 0 ] | max }}
 
                     - conditions: "{{ last_domain == 'climate' }}"
                       sequence:
@@ -657,28 +660,21 @@ action:
                           data:
                             entity_id: "{{ last_entity }}"
 
-                - delay:
-                    milliseconds: "{{ hold_repeat_interval | int }}"
+                - wait_for_trigger:
+                    - trigger: event
+                      event_type: zha_event
+                      event_data:
+                        device_id: !input remote
+                        command: stop_with_on_off
+                    - trigger: event
+                      event_type: zha_event
+                      event_data:
+                        device_id: !input remote
+                        command: stop
+                  timeout:
+                    milliseconds: !input hold_repeat_interval
+                  continue_on_timeout: true
 
               until:
-                # Loop runs indefinitely; mode: restart terminates it when
-                # the stop/stop_with_on_off event fires a new automation run.
                 - condition: template
-                  value_template: "{{ false }}"
-
-          - wait_for_trigger:
-              - platform: event
-                event_type: zha_event
-                event_data:
-                  device_id: !input remote
-                  cluster_id: 8
-                  command: stop_with_on_off
-              - platform: event
-                event_type: zha_event
-                event_data:
-                  device_id: !input remote
-                  cluster_id: 8
-                  command: stop
-            timeout:
-              seconds: 10
-            continue_on_timeout: true
+                  value_template: "{{ wait.trigger is not none }}"
