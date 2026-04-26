@@ -587,7 +587,8 @@ action:
       - conditions: "{{ trigger.event.data.command == 'on' }}"
         sequence:
           - wait_for_trigger:
-              - event_type: zha_event
+              - platform: event
+                event_type: zha_event
                 event_data:
                   device_id: !input remote
                   command: "on"
@@ -601,7 +602,8 @@ action:
               - conditions: "{{ wait.trigger is not none }}"
                 sequence:
                   - wait_for_trigger:
-                      - event_type: zha_event
+                      - platform: event
+                        event_type: zha_event
                         event_data:
                           device_id: !input remote
                           command: "on"
@@ -615,7 +617,8 @@ action:
                       - conditions: "{{ wait.trigger is not none }}"
                         sequence:
                           - wait_for_trigger:
-                              - event_type: zha_event
+                              - platform: event
+                                event_type: zha_event
                                 event_data:
                                   device_id: !input remote
                                   command: "on"
@@ -629,7 +632,8 @@ action:
                               - conditions: "{{ wait.trigger is not none }}"
                                 sequence:
                                   - wait_for_trigger:
-                                      - event_type: zha_event
+                                      - platform: event
+                                        event_type: zha_event
                                         event_data:
                                           device_id: !input remote
                                           command: "on"
@@ -649,7 +653,8 @@ action:
       - conditions: "{{ trigger.event.data.command == 'off' }}"
         sequence:
           - wait_for_trigger:
-              - event_type: zha_event
+              - platform: event
+                event_type: zha_event
                 event_data:
                   device_id: !input remote
                   command: "off"
@@ -663,7 +668,8 @@ action:
               - conditions: "{{ wait.trigger is not none }}"
                 sequence:
                   - wait_for_trigger:
-                      - event_type: zha_event
+                      - platform: event
+                        event_type: zha_event
                         event_data:
                           device_id: !input remote
                           command: "off"
@@ -677,7 +683,8 @@ action:
                       - conditions: "{{ wait.trigger is not none }}"
                         sequence:
                           - wait_for_trigger:
-                              - event_type: zha_event
+                              - platform: event
+                                event_type: zha_event
                                 event_data:
                                   device_id: !input remote
                                   command: "off"
@@ -691,7 +698,8 @@ action:
                               - conditions: "{{ wait.trigger is not none }}"
                                 sequence:
                                   - wait_for_trigger:
-                                      - event_type: zha_event
+                                      - platform: event
+                                        event_type: zha_event
                                         event_data:
                                           device_id: !input remote
                                           command: "off"
@@ -713,7 +721,8 @@ action:
              and trigger.event.data.args == [256, 13, 0] }}
         sequence:
           - wait_for_trigger:
-              - event_type: zha_event
+              - platform: event
+                event_type: zha_event
                 event_data:
                   device_id: !input remote
                   command: press
@@ -728,7 +737,8 @@ action:
               - conditions: "{{ wait.trigger is not none }}"
                 sequence:
                   - wait_for_trigger:
-                      - event_type: zha_event
+                      - platform: event
+                        event_type: zha_event
                         event_data:
                           device_id: !input remote
                           command: press
@@ -743,7 +753,8 @@ action:
                       - conditions: "{{ wait.trigger is not none }}"
                         sequence:
                           - wait_for_trigger:
-                              - event_type: zha_event
+                              - platform: event
+                                event_type: zha_event
                                 event_data:
                                   device_id: !input remote
                                   command: press
@@ -758,7 +769,8 @@ action:
                               - conditions: "{{ wait.trigger is not none }}"
                                 sequence:
                                   - wait_for_trigger:
-                                      - event_type: zha_event
+                                      - platform: event
+                                        event_type: zha_event
                                         event_data:
                                           device_id: !input remote
                                           command: press
@@ -781,7 +793,8 @@ action:
              and trigger.event.data.args == [257, 13, 0] }}
         sequence:
           - wait_for_trigger:
-              - event_type: zha_event
+              - platform: event
+                event_type: zha_event
                 event_data:
                   device_id: !input remote
                   command: press
@@ -796,7 +809,8 @@ action:
               - conditions: "{{ wait.trigger is not none }}"
                 sequence:
                   - wait_for_trigger:
-                      - event_type: zha_event
+                      - platform: event
+                        event_type: zha_event
                         event_data:
                           device_id: !input remote
                           command: press
@@ -811,7 +825,8 @@ action:
                       - conditions: "{{ wait.trigger is not none }}"
                         sequence:
                           - wait_for_trigger:
-                              - event_type: zha_event
+                              - platform: event
+                                event_type: zha_event
                                 event_data:
                                   device_id: !input remote
                                   command: press
@@ -826,7 +841,8 @@ action:
                               - conditions: "{{ wait.trigger is not none }}"
                                 sequence:
                                   - wait_for_trigger:
-                                      - event_type: zha_event
+                                      - platform: event
+                                        event_type: zha_event
                                         event_data:
                                           device_id: !input remote
                                           command: press
@@ -840,162 +856,3 @@ action:
                                         sequence: !input left_quadruple_action
                                       - conditions: "{{ wait.trigger is not none }}"
                                         sequence: !input left_quintuple_action
-
-  ############################################################
-  # LONG‑PRESS BRIGHTNESS / VOLUME / FLEX‑A DOMAIN LOGIC
-  ############################################################
-  - choose:
-
-      #######################################################################
-      # UP LONG‑PRESS — INCREASE
-      #######################################################################
-      - conditions: >
-          {{ trigger.event.data.command == 'move_with_on_off'
-             or trigger.event.data.command == 'move' }}
-        sequence:
-          - repeat:
-              until: "{{ trigger.event.data.command == 'stop' }}"
-              sequence:
-
-                - choose:
-
-                    # LIGHT
-                    - conditions: "{{ last_domain == 'light' }}"
-                      sequence:
-                        - service: light.turn_on
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            brightness_step_pct: "{{ brightness_step }}"
-
-                    # MEDIA PLAYER
-                    - conditions: "{{ last_domain == 'media_player' }}"
-                      sequence:
-                        - service: media_player.volume_set
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            volume_level: >
-                              {{
-                                [
-                                  (state_attr(last_entity, 'volume_level') | float(0)) + volume_step,
-                                  1
-                                ] | min
-                              }}
-
-                    # FAN
-                    - conditions: "{{ last_domain == 'fan' }}"
-                      sequence:
-                        - service: fan.set_percentage
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            percentage: >
-                              {{
-                                [
-                                  (state_attr(last_entity, 'percentage') | float(0)) + brightness_step,
-                                  100
-                                ] | min
-                              }}
-
-                    # CLIMATE
-                    - conditions: "{{ last_domain == 'climate' }}"
-                      sequence:
-                        - service: climate.set_temperature
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            temperature: >
-                              {{
-                                (state_attr(last_entity, 'temperature') | float(20)) + volume_step
-                              }}
-
-                    # COVER
-                    - conditions: "{{ last_domain == 'cover' }}"
-                      sequence:
-                        - service: cover.open_cover
-                          data:
-                            entity_id: "{{ last_entity }}"
-
-                    # SWITCH
-                    - conditions: "{{ last_domain == 'switch' }}"
-                      sequence:
-                        - service: switch.turn_on
-                          data:
-                            entity_id: "{{ last_entity }}"
-
-                - delay:
-                    milliseconds: "{{ hold_repeat_interval }}"
-
-      #######################################################################
-      # DOWN LONG‑PRESS — DECREASE
-      #######################################################################
-      - conditions: >
-          {{ trigger.event.data.command == 'move'
-             or trigger.event.data.command == 'move_with_on_off' }}
-        sequence:
-          - repeat:
-              until: "{{ trigger.event.data.command == 'stop' }}"
-              sequence:
-
-                - choose:
-
-                    # LIGHT
-                    - conditions: "{{ last_domain == 'light' }}"
-                      sequence:
-                        - service: light.turn_on
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            brightness_step_pct: "-{{ brightness_step }}"
-
-                    # MEDIA PLAYER
-                    - conditions: "{{ last_domain == 'media_player' }}"
-                      sequence:
-                        - service: media_player.volume_set
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            volume_level: >
-                              {{
-                                [
-                                  (state_attr(last_entity, 'volume_level') | float(0)) - volume_step,
-                                  0
-                                ] | max
-                              }}
-
-                    # FAN
-                    - conditions: "{{ last_domain == 'fan' }}"
-                      sequence:
-                        - service: fan.set_percentage
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            percentage: >
-                              {{
-                                [
-                                  (state_attr(last_entity, 'percentage') | float(0)) - brightness_step,
-                                  0
-                                ] | max
-                              }}
-
-                    # CLIMATE
-                    - conditions: "{{ last_domain == 'climate' }}"
-                      sequence:
-                        - service: climate.set_temperature
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            temperature: >
-                              {{
-                                (state_attr(last_entity, 'temperature') | float(20)) - volume_step
-                              }}
-
-                    # COVER
-                    - conditions: "{{ last_domain == 'cover' }}"
-                      sequence:
-                        - service: cover.close_cover
-                          data:
-                            entity_id: "{{ last_entity }}"
-
-                    # SWITCH
-                    - conditions: "{{ last_domain == 'switch' }}"
-                      sequence:
-                        - service: switch.turn_off
-                          data:
-                            entity_id: "{{ last_entity }}"
-
-                - delay:
-                    milliseconds: "{{ hold_repeat_interval }}"
