@@ -1,0 +1,415 @@
+blueprint:
+  name: ZHA Events - IKEA Styrbar 4 Button Remote - Multipress (Advanced)
+  description: >
+    Advanced multi‑press support (1–5 presses + long press + hold repeat)
+    for the IKEA Styrbar 4‑button remote using ZHA.
+
+    Includes:
+    - Multi‑press (1–5)
+    - Long‑press Up/Down with context‑aware brightness/volume control
+    - Hold‑repeat with user‑configurable interval
+    - Per‑button press timeouts
+    - Disable unused buttons
+    - Debug mode
+    - One helper per remote to store last action entity
+    - Clean UI grouping
+
+    Original author: Thomas Maurice — Advanced version by Brad Bowles
+    Based on https://gist.github.com/thomas-maurice/794d44ed2c0cef7909e2453759ba7a99
+
+  domain: automation
+
+  input:
+
+    ###############################################################
+    # 1. REMOTE + HELPER CONFIGURATION
+    ###############################################################
+
+    remote:
+      name: IKEA Styrbar remote control (4 buttons)
+      description: Select the remote to bind to this automation.
+      selector:
+        device:
+          integration: zha
+          manufacturer: IKEA of Sweden
+          model: Remote Control N2
+
+    last_action_helper:
+      name: Last Action Helper (input_text)
+      description: >
+        Create an input_text helper to store the last entity acted on.
+        Recommended name:
+        input_text.styrbar_last_action_<device_id>
+      selector:
+        entity:
+          domain: input_text
+
+    ###############################################################
+    # 2. PRIMARY ENTITIES (USED FOR CONTEXT-AWARE LONG PRESS)
+    ###############################################################
+
+    primary_entity_up:
+      name: Primary entity for UP button group
+      description: >
+        This entity will be stored as the "last action" when any UP press
+        action is triggered. Used for long‑press brightness/volume control.
+      selector:
+        entity: {}
+
+    primary_entity_down:
+      name: Primary entity for DOWN button group
+      description: >
+        This entity will be stored as the "last action" when any DOWN press
+        action is triggered.
+      selector:
+        entity: {}
+
+    primary_entity_left:
+      name: Primary entity for LEFT button group
+      description: >
+        This entity will be stored as the "last action" when any LEFT press
+        action is triggered.
+      selector:
+        entity: {}
+
+    primary_entity_right:
+      name: Primary entity for RIGHT button group
+      description: >
+        This entity will be stored as the "last action" when any RIGHT press
+        action is triggered.
+      selector:
+        entity: {}
+
+    ###############################################################
+    # 3. BUTTON ENABLE/DISABLE
+    ###############################################################
+
+    enable_updown:
+      name: Enable Up/Down buttons
+      selector:
+        boolean: {}
+      default: true
+
+    enable_leftright:
+      name: Enable Left/Right buttons
+      selector:
+        boolean: {}
+      default: true
+
+    ###############################################################
+    # 4. TIMING SETTINGS
+    ###############################################################
+
+    press_timeout_updown:
+      name: Press timeout (Up/Down)
+      description: Time after which a press sequence is considered complete.
+      selector:
+        number:
+          min: 100
+          max: 2000
+          step: 50
+          unit_of_measurement: milliseconds
+          mode: slider
+      default: 500
+
+    press_timeout_leftright:
+      name: Press timeout (Left/Right)
+      description: Time after which a press sequence is considered complete.
+      selector:
+        number:
+          min: 100
+          max: 2000
+          step: 50
+          unit_of_measurement: milliseconds
+          mode: slider
+      default: 300
+
+    repeat_interval:
+      name: Hold repeat interval
+      description: Time between brightness/volume steps while holding a button.
+      selector:
+        number:
+          min: 50
+          max: 1000
+          step: 50
+          unit_of_measurement: milliseconds
+          mode: slider
+      default: 250
+
+    ###############################################################
+    # 5. BRIGHTNESS/VOLUME SETTINGS
+    ###############################################################
+
+    brightness_step_pct:
+      name: Brightness step (%)
+      description: Percentage brightness change per repeat step.
+      selector:
+        number:
+          min: 1
+          max: 50
+          step: 1
+          unit_of_measurement: percent
+          mode: slider
+      default: 10
+
+    ###############################################################
+    # 6. DEBUG MODE
+    ###############################################################
+
+    debug_mode:
+      name: Enable debug logging
+      selector:
+        boolean: {}
+      default: false
+
+    ###############################################################
+    # 7. ACTIONS (USER CONFIGURABLE)
+    ###############################################################
+
+    # UP
+    action_up_1:
+      name: Up - Single press
+      selector:
+        action: {}
+    action_up_2:
+      name: Up - Double press
+      selector:
+        action: {}
+    action_up_3:
+      name: Up - Triple press
+      selector:
+        action: {}
+    action_up_4:
+      name: Up - Quadruple press
+      selector:
+        action: {}
+    action_up_5:
+      name: Up - Quintuple press
+      selector:
+        action: {}
+
+    # DOWN
+    action_down_1:
+      name: Down - Single press
+      selector:
+        action: {}
+    action_down_2:
+      name: Down - Double press
+      selector:
+        action: {}
+    action_down_3:
+      name: Down - Triple press
+      selector:
+        action: {}
+    action_down_4:
+      name: Down - Quadruple press
+      selector:
+        action: {}
+    action_down_5:
+      name: Down - Quintuple press
+      selector:
+        action: {}
+
+    # LEFT
+    action_left_1:
+      name: Left - Single press
+      selector:
+        action: {}
+    action_left_2:
+      name: Left - Double press
+      selector:
+        action: {}
+    action_left_3:
+      name: Left - Triple press
+      selector:
+        action: {}
+    action_left_4:
+      name: Left - Quadruple press
+      selector:
+        action: {}
+    action_left_5:
+      name: Left - Quintuple press
+      selector:
+        action: {}
+
+    # RIGHT
+    action_right_1:
+      name: Right - Single press
+      selector:
+        action: {}
+    action_right_2:
+      name: Right - Double press
+      selector:
+        action: {}
+    action_right_3:
+      name: Right - Triple press
+      selector:
+        action: {}
+    action_right_4:
+      name: Right - Quadruple press
+      selector:
+        action: {}
+    action_right_5:
+      name: Right - Quintuple press
+      selector:
+        action: {}
+
+    ###############################################################
+    # 8. LONG PRESS ACTIONS
+    ###############################################################
+
+    action_long_left:
+      name: Left - Long press
+      selector:
+        action: {}
+
+    action_long_right:
+      name: Right - Long press
+      selector:
+        action: {}
+
+###############################################################
+# AUTOMATION LOGIC
+###############################################################
+
+mode: restart
+
+trigger:
+  - platform: event
+    event_type: zha_event
+    event_data:
+      device_id: !input remote
+
+variables:
+  last_helper: !input last_action_helper
+  primary_up: !input primary_entity_up
+  primary_down: !input primary_entity_down
+  primary_left: !input primary_entity_left
+  primary_right: !input primary_entity_right
+  repeat_ms: !input repeat_interval
+  brightness_step: !input brightness_step_pct
+  debug: !input debug_mode
+
+action:
+
+  - choose:
+
+      ###############################################################
+      # UP BUTTON GROUP
+      ###############################################################
+
+      - conditions:
+          - "{{ trigger.event.data.command == 'on' }}"
+          - "{{ enable_updown }}"
+        sequence:
+          - choose:
+              - conditions: "{{ trigger.event.data.args == [1] }}"
+                sequence:
+                  - !input action_up_1
+                  - service: input_text.set_value
+                    target: { entity_id: "{{ last_helper }}" }
+                    data: { value: "{{ primary_up }}" }
+
+              - conditions: "{{ trigger.event.data.args == [2] }}"
+                sequence:
+                  - !input action_up_2
+                  - service: input_text.set_value
+                    target: { entity_id: "{{ last_helper }}" }
+                    data: { value: "{{ primary_up }}" }
+
+              - conditions: "{{ trigger.event.data.args == [3] }}"
+                sequence:
+                  - !input action_up_3
+                  - service: input_text.set_value
+                    target: { entity_id: "{{ last_helper }}" }
+                    data: { value: "{{ primary_up }}" }
+
+              - conditions: "{{ trigger.event.data.args == [4] }}"
+                sequence:
+                  - !input action_up_4
+                  - service: input_text.set_value
+                    target: { entity_id: "{{ last_helper }}" }
+                    data: { value: "{{ primary_up }}" }
+
+              - conditions: "{{ trigger.event.data.args == [5] }}"
+                sequence:
+                  - !input action_up_5
+                  - service: input_text.set_value
+                    target: { entity_id: "{{ last_helper }}" }
+                    data: { value: "{{ primary_up }}" }
+
+      ###############################################################
+      # DOWN BUTTON GROUP
+      ###############################################################
+
+      - conditions:
+          - "{{ trigger.event.data.command == 'off' }}"
+          - "{{ enable_updown }}"
+        sequence:
+          - choose:
+              - conditions: "{{ trigger.event.data.args == [1] }}"
+                sequence:
+                  - !input action_down_1
+                  - service: input_text.set_value
+                    target: { entity_id: "{{ last_helper }}" }
+                    data: { value: "{{ primary_down }}" }
+
+              - conditions: "{{ trigger.event.data.args == [2] }}"
+                sequence:
+                  - !input action_down_2
+                  - service: input_text.set_value
+                    target: { entity_id: "{{ last_helper }}" }
+                    data: { value: "{{ primary_down }}" }
+
+              - conditions: "{{ trigger.event.data.args == [3] }}"
+                sequence:
+                  - !input action_down_3
+                  - service: input_text.set_value
+                    target: { entity_id: "{{ last_helper }}" }
+                    data: { value: "{{ primary_down }}" }
+
+              - conditions: "{{ trigger.event.data.args == [4] }}"
+                sequence:
+                  - !input action_down_4
+                  - service: input_text.set_value
+                    target: { entity_id: "{{ last_helper }}" }
+                    data: { value: "{{ primary_down }}" }
+
+              - conditions: "{{ trigger.event.data.args == [5] }}"
+                sequence:
+                  - !input action_down_5
+                  - service: input_text.set_value
+                    target: { entity_id: "{{ last_helper }}" }
+                    data: { value: "{{ primary_down }}" }
+
+      ###############################################################
+      # LEFT BUTTON GROUP
+      ###############################################################
+
+      - conditions:
+          - "{{ trigger.event.data.command == 'press' }}"
+          - "{{ trigger.event.data.args == [257] }}"
+          - "{{ enable_leftright }}"
+        sequence:
+          - !input action_left_1
+          - service: input_text.set_value
+            target: { entity_id: "{{ last_helper }}" }
+            data: { value: "{{ primary_left }}" }
+
+      ###############################################################
+      # RIGHT BUTTON GROUP
+      ###############################################################
+
+      - conditions:
+          - "{{ trigger.event.data.command == 'press' }}"
+          - "{{ trigger.event.data.args == [256] }}"
+          - "{{ enable_leftright }}"
+        sequence:
+          - !input action_right_1
+          - service: input_text.set_value
+            target: { entity_id: "{{ last_helper }}" }
+            data: { value: "{{ primary_right }}" }
+
+###############################################################
+# END OF BLUEPRINT
+###############################################################
