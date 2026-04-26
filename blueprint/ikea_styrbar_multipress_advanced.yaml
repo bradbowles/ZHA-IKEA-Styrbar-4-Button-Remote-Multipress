@@ -546,27 +546,23 @@ action:
             data:
               message: >
                 STYRBAR DEBUG —
-                button={{ button }},
-                press_type={{ press_type }},
+                command={{ trigger.event.data.command }},
+                args={{ trigger.event.data.args }},
                 mapped_entity={{ mapped_entity }},
                 last_entity={{ last_entity }},
                 last_domain={{ last_domain }}
               level: info
 
   ############################################################
-  # HELPER UPDATE (H2 — CLEAR WHEN ENTITY MISSING)
+  # HELPER UPDATE (HU‑A — UPDATE ON EVERY PRESS)
   ############################################################
   - choose:
-
-      # If entity is configured → store it
       - conditions: "{{ mapped_entity != 'none' }}"
         sequence:
           - service: input_text.set_value
             data:
               entity_id: "{{ helper }}"
               value: "{{ mapped_entity }}"
-
-      # If entity is missing → clear helper
       - conditions: "{{ mapped_entity == 'none' }}"
         sequence:
           - service: input_text.set_value
@@ -575,107 +571,295 @@ action:
               value: ""
 
   ############################################################
-  # RUN USER ACTIONS (ONLY IF ENTITY EXISTS OR ACTION EXISTS)
+  # MULTI‑PRESS LOGIC (MP‑1 — ORIGINAL MODEL)
   ############################################################
   - choose:
 
       #######################################################################
-      # UP BUTTON
+      # LONG PRESS (LEFT/RIGHT ONLY)
       #######################################################################
-      - conditions: "{{ button == 'up' and enable_up }}"
+      - conditions: "{{ trigger.event.data.command == 'release' }}"
+        sequence: !input left_long_action
+
+      #######################################################################
+      # UP BUTTON (command: "on")
+      #######################################################################
+      - conditions: "{{ trigger.event.data.command == 'on' }}"
         sequence:
+          - wait_for_trigger:
+              - event_type: zha_event
+                event_data:
+                  device_id: !input remote
+                  command: "on"
+            timeout:
+              milliseconds: !input press_timeout
+            continue_on_timeout: true
+
           - choose:
-              - conditions: "{{ press_type == 'single' }}"
+              - conditions: "{{ wait.trigger is none }}"
                 sequence: !input up_single_action
-              - conditions: "{{ press_type == 'double' }}"
-                sequence: !input up_double_action
-              - conditions: "{{ press_type == 'triple' }}"
-                sequence: !input up_triple_action
-              - conditions: "{{ press_type == 'quadruple' }}"
-                sequence: !input up_quadruple_action
-              - conditions: "{{ press_type == 'quintuple' }}"
-                sequence: !input up_quintuple_action
-              - conditions: "{{ press_type == 'long' }}"
-                sequence: !input up_long_action
+              - conditions: "{{ wait.trigger is not none }}"
+                sequence:
+                  - wait_for_trigger:
+                      - event_type: zha_event
+                        event_data:
+                          device_id: !input remote
+                          command: "on"
+                    timeout:
+                      milliseconds: !input press_timeout
+                    continue_on_timeout: true
+
+                  - choose:
+                      - conditions: "{{ wait.trigger is none }}"
+                        sequence: !input up_double_action
+                      - conditions: "{{ wait.trigger is not none }}"
+                        sequence:
+                          - wait_for_trigger:
+                              - event_type: zha_event
+                                event_data:
+                                  device_id: !input remote
+                                  command: "on"
+                            timeout:
+                              milliseconds: !input press_timeout
+                            continue_on_timeout: true
+
+                          - choose:
+                              - conditions: "{{ wait.trigger is none }}"
+                                sequence: !input up_triple_action
+                              - conditions: "{{ wait.trigger is not none }}"
+                                sequence:
+                                  - wait_for_trigger:
+                                      - event_type: zha_event
+                                        event_data:
+                                          device_id: !input remote
+                                          command: "on"
+                                    timeout:
+                                      milliseconds: !input press_timeout
+                                    continue_on_timeout: true
+
+                                  - choose:
+                                      - conditions: "{{ wait.trigger is none }}"
+                                        sequence: !input up_quadruple_action
+                                      - conditions: "{{ wait.trigger is not none }}"
+                                        sequence: !input up_quintuple_action
 
       #######################################################################
-      # DOWN BUTTON
+      # DOWN BUTTON (command: "off")
       #######################################################################
-      - conditions: "{{ button == 'down' and enable_down }}"
+      - conditions: "{{ trigger.event.data.command == 'off' }}"
         sequence:
+          - wait_for_trigger:
+              - event_type: zha_event
+                event_data:
+                  device_id: !input remote
+                  command: "off"
+            timeout:
+              milliseconds: !input press_timeout
+            continue_on_timeout: true
+
           - choose:
-              - conditions: "{{ press_type == 'single' }}"
+              - conditions: "{{ wait.trigger is none }}"
                 sequence: !input down_single_action
-              - conditions: "{{ press_type == 'double' }}"
-                sequence: !input down_double_action
-              - conditions: "{{ press_type == 'triple' }}"
-                sequence: !input down_triple_action
-              - conditions: "{{ press_type == 'quadruple' }}"
-                sequence: !input down_quadruple_action
-              - conditions: "{{ press_type == 'quintuple' }}"
-                sequence: !input down_quintuple_action
-              - conditions: "{{ press_type == 'long' }}"
-                sequence: !input down_long_action
+              - conditions: "{{ wait.trigger is not none }}"
+                sequence:
+                  - wait_for_trigger:
+                      - event_type: zha_event
+                        event_data:
+                          device_id: !input remote
+                          command: "off"
+                    timeout:
+                      milliseconds: !input press_timeout
+                    continue_on_timeout: true
+
+                  - choose:
+                      - conditions: "{{ wait.trigger is none }}"
+                        sequence: !input down_double_action
+                      - conditions: "{{ wait.trigger is not none }}"
+                        sequence:
+                          - wait_for_trigger:
+                              - event_type: zha_event
+                                event_data:
+                                  device_id: !input remote
+                                  command: "off"
+                            timeout:
+                              milliseconds: !input press_timeout
+                            continue_on_timeout: true
+
+                          - choose:
+                              - conditions: "{{ wait.trigger is none }}"
+                                sequence: !input down_triple_action
+                              - conditions: "{{ wait.trigger is not none }}"
+                                sequence:
+                                  - wait_for_trigger:
+                                      - event_type: zha_event
+                                        event_data:
+                                          device_id: !input remote
+                                          command: "off"
+                                    timeout:
+                                      milliseconds: !input press_timeout
+                                    continue_on_timeout: true
+
+                                  - choose:
+                                      - conditions: "{{ wait.trigger is none }}"
+                                        sequence: !input down_quadruple_action
+                                      - conditions: "{{ wait.trigger is not none }}"
+                                        sequence: !input down_quintuple_action
 
       #######################################################################
-      # LEFT BUTTON
-      #######################################################################
-      - conditions: "{{ button == 'left' and enable_left }}"
-        sequence:
-          - choose:
-              - conditions: "{{ press_type == 'single' }}"
-                sequence: !input left_single_action
-              - conditions: "{{ press_type == 'double' }}"
-                sequence: !input left_double_action
-              - conditions: "{{ press_type == 'triple' }}"
-                sequence: !input left_triple_action
-              - conditions: "{{ press_type == 'quadruple' }}"
-                sequence: !input left_quadruple_action
-              - conditions: "{{ press_type == 'quintuple' }}"
-                sequence: !input left_quintuple_action
-              - conditions: "{{ press_type == 'long' }}"
-                sequence: !input left_long_action
-
-      #######################################################################
-      # RIGHT BUTTON
-      #######################################################################
-      - conditions: "{{ button == 'right' and enable_right }}"
-        sequence:
-          - choose:
-              - conditions: "{{ press_type == 'single' }}"
-                sequence: !input right_single_action
-              - conditions: "{{ press_type == 'double' }}"
-                sequence: !input right_double_action
-              - conditions: "{{ press_type == 'triple' }}"
-                sequence: !input right_triple_action
-              - conditions: "{{ press_type == 'quadruple' }}"
-                sequence: !input right_quadruple_action
-              - conditions: "{{ press_type == 'quintuple' }}"
-                sequence: !input right_quintuple_action
-              - conditions: "{{ press_type == 'long' }}"
-                sequence: !input right_long_action
-
-  ############################################################
-  # LONG-PRESS BRIGHTNESS / VOLUME CONTROL
-  ############################################################
-
-  - choose:
-
-      #######################################################################
-      # LONG PRESS UP — BRIGHTNESS UP / VOLUME UP
+      # RIGHT BUTTON (args: [256, 13, 0])
       #######################################################################
       - conditions: >
-          {{ button == 'up'
-             and press_type == 'long'
-             and last_entity not in ['', None]
-             and last_domain in ['light', 'media_player'] }}
+          {{ trigger.event.data.command == 'press'
+             and trigger.event.data.args == [256, 13, 0] }}
+        sequence:
+          - wait_for_trigger:
+              - event_type: zha_event
+                event_data:
+                  device_id: !input remote
+                  command: press
+                  args: [256, 13, 0]
+            timeout:
+              milliseconds: !input press_timeout
+            continue_on_timeout: true
+
+          - choose:
+              - conditions: "{{ wait.trigger is none }}"
+                sequence: !input right_single_action
+              - conditions: "{{ wait.trigger is not none }}"
+                sequence:
+                  - wait_for_trigger:
+                      - event_type: zha_event
+                        event_data:
+                          device_id: !input remote
+                          command: press
+                          args: [256, 13, 0]
+                    timeout:
+                      milliseconds: !input press_timeout
+                    continue_on_timeout: true
+
+                  - choose:
+                      - conditions: "{{ wait.trigger is none }}"
+                        sequence: !input right_double_action
+                      - conditions: "{{ wait.trigger is not none }}"
+                        sequence:
+                          - wait_for_trigger:
+                              - event_type: zha_event
+                                event_data:
+                                  device_id: !input remote
+                                  command: press
+                                  args: [256, 13, 0]
+                            timeout:
+                              milliseconds: !input press_timeout
+                            continue_on_timeout: true
+
+                          - choose:
+                              - conditions: "{{ wait.trigger is none }}"
+                                sequence: !input right_triple_action
+                              - conditions: "{{ wait.trigger is not none }}"
+                                sequence:
+                                  - wait_for_trigger:
+                                      - event_type: zha_event
+                                        event_data:
+                                          device_id: !input remote
+                                          command: press
+                                          args: [256, 13, 0]
+                                    timeout:
+                                      milliseconds: !input press_timeout
+                                    continue_on_timeout: true
+
+                                  - choose:
+                                      - conditions: "{{ wait.trigger is none }}"
+                                        sequence: !input right_quadruple_action
+                                      - conditions: "{{ wait.trigger is not none }}"
+                                        sequence: !input right_quintuple_action
+
+      #######################################################################
+      # LEFT BUTTON (args: [257, 13, 0])
+      #######################################################################
+      - conditions: >
+          {{ trigger.event.data.command == 'press'
+             and trigger.event.data.args == [257, 13, 0] }}
+        sequence:
+          - wait_for_trigger:
+              - event_type: zha_event
+                event_data:
+                  device_id: !input remote
+                  command: press
+                  args: [257, 13, 0]
+            timeout:
+              milliseconds: !input press_timeout
+            continue_on_timeout: true
+
+          - choose:
+              - conditions: "{{ wait.trigger is none }}"
+                sequence: !input left_single_action
+              - conditions: "{{ wait.trigger is not none }}"
+                sequence:
+                  - wait_for_trigger:
+                      - event_type: zha_event
+                        event_data:
+                          device_id: !input remote
+                          command: press
+                          args: [257, 13, 0]
+                    timeout:
+                      milliseconds: !input press_timeout
+                    continue_on_timeout: true
+
+                  - choose:
+                      - conditions: "{{ wait.trigger is none }}"
+                        sequence: !input left_double_action
+                      - conditions: "{{ wait.trigger is not none }}"
+                        sequence:
+                          - wait_for_trigger:
+                              - event_type: zha_event
+                                event_data:
+                                  device_id: !input remote
+                                  command: press
+                                  args: [257, 13, 0]
+                            timeout:
+                              milliseconds: !input press_timeout
+                            continue_on_timeout: true
+
+                          - choose:
+                              - conditions: "{{ wait.trigger is none }}"
+                                sequence: !input left_triple_action
+                              - conditions: "{{ wait.trigger is not none }}"
+                                sequence:
+                                  - wait_for_trigger:
+                                      - event_type: zha_event
+                                        event_data:
+                                          device_id: !input remote
+                                          command: press
+                                          args: [257, 13, 0]
+                                    timeout:
+                                      milliseconds: !input press_timeout
+                                    continue_on_timeout: true
+
+                                  - choose:
+                                      - conditions: "{{ wait.trigger is none }}"
+                                        sequence: !input left_quadruple_action
+                                      - conditions: "{{ wait.trigger is not none }}"
+                                        sequence: !input left_quintuple_action
+
+  ############################################################
+  # LONG‑PRESS BRIGHTNESS / VOLUME / FLEX‑A DOMAIN LOGIC
+  ############################################################
+  - choose:
+
+      #######################################################################
+      # UP LONG‑PRESS — INCREASE
+      #######################################################################
+      - conditions: >
+          {{ trigger.event.data.command == 'move_with_on_off'
+             or trigger.event.data.command == 'move' }}
         sequence:
           - repeat:
-              until: "{{ command not in ['move_with_on_off', 'move'] }}"
+              until: "{{ trigger.event.data.command == 'stop' }}"
               sequence:
 
-                # LIGHT BRIGHTNESS UP
                 - choose:
+
+                    # LIGHT
                     - conditions: "{{ last_domain == 'light' }}"
                       sequence:
                         - service: light.turn_on
@@ -683,8 +867,7 @@ action:
                             entity_id: "{{ last_entity }}"
                             brightness_step_pct: "{{ brightness_step }}"
 
-                # MEDIA PLAYER VOLUME UP
-                - choose:
+                    # MEDIA PLAYER
                     - conditions: "{{ last_domain == 'media_player' }}"
                       sequence:
                         - service: media_player.volume_set
@@ -698,24 +881,62 @@ action:
                                 ] | min
                               }}
 
+                    # FAN
+                    - conditions: "{{ last_domain == 'fan' }}"
+                      sequence:
+                        - service: fan.set_percentage
+                          data:
+                            entity_id: "{{ last_entity }}"
+                            percentage: >
+                              {{
+                                [
+                                  (state_attr(last_entity, 'percentage') | float(0)) + brightness_step,
+                                  100
+                                ] | min
+                              }}
+
+                    # CLIMATE
+                    - conditions: "{{ last_domain == 'climate' }}"
+                      sequence:
+                        - service: climate.set_temperature
+                          data:
+                            entity_id: "{{ last_entity }}"
+                            temperature: >
+                              {{
+                                (state_attr(last_entity, 'temperature') | float(20)) + volume_step
+                              }}
+
+                    # COVER
+                    - conditions: "{{ last_domain == 'cover' }}"
+                      sequence:
+                        - service: cover.open_cover
+                          data:
+                            entity_id: "{{ last_entity }}"
+
+                    # SWITCH
+                    - conditions: "{{ last_domain == 'switch' }}"
+                      sequence:
+                        - service: switch.turn_on
+                          data:
+                            entity_id: "{{ last_entity }}"
+
                 - delay:
                     milliseconds: "{{ hold_repeat_interval }}"
 
       #######################################################################
-      # LONG PRESS DOWN — BRIGHTNESS DOWN / VOLUME DOWN
+      # DOWN LONG‑PRESS — DECREASE
       #######################################################################
       - conditions: >
-          {{ button == 'down'
-             and press_type == 'long'
-             and last_entity not in ['', None]
-             and last_domain in ['light', 'media_player'] }}
+          {{ trigger.event.data.command == 'move'
+             or trigger.event.data.command == 'move_with_on_off' }}
         sequence:
           - repeat:
-              until: "{{ command not in ['move_with_on_off', 'move'] }}"
+              until: "{{ trigger.event.data.command == 'stop' }}"
               sequence:
 
-                # LIGHT BRIGHTNESS DOWN
                 - choose:
+
+                    # LIGHT
                     - conditions: "{{ last_domain == 'light' }}"
                       sequence:
                         - service: light.turn_on
@@ -723,8 +944,7 @@ action:
                             entity_id: "{{ last_entity }}"
                             brightness_step_pct: "-{{ brightness_step }}"
 
-                # MEDIA PLAYER VOLUME DOWN
-                - choose:
+                    # MEDIA PLAYER
                     - conditions: "{{ last_domain == 'media_player' }}"
                       sequence:
                         - service: media_player.volume_set
@@ -737,6 +957,45 @@ action:
                                   0
                                 ] | max
                               }}
+
+                    # FAN
+                    - conditions: "{{ last_domain == 'fan' }}"
+                      sequence:
+                        - service: fan.set_percentage
+                          data:
+                            entity_id: "{{ last_entity }}"
+                            percentage: >
+                              {{
+                                [
+                                  (state_attr(last_entity, 'percentage') | float(0)) - brightness_step,
+                                  0
+                                ] | max
+                              }}
+
+                    # CLIMATE
+                    - conditions: "{{ last_domain == 'climate' }}"
+                      sequence:
+                        - service: climate.set_temperature
+                          data:
+                            entity_id: "{{ last_entity }}"
+                            temperature: >
+                              {{
+                                (state_attr(last_entity, 'temperature') | float(20)) - volume_step
+                              }}
+
+                    # COVER
+                    - conditions: "{{ last_domain == 'cover' }}"
+                      sequence:
+                        - service: cover.close_cover
+                          data:
+                            entity_id: "{{ last_entity }}"
+
+                    # SWITCH
+                    - conditions: "{{ last_domain == 'switch' }}"
+                      sequence:
+                        - service: switch.turn_off
+                          data:
+                            entity_id: "{{ last_entity }}"
 
                 - delay:
                     milliseconds: "{{ hold_repeat_interval }}"
