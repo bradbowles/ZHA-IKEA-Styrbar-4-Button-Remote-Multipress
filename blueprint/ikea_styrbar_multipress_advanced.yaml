@@ -42,16 +42,6 @@ blueprint:
           unit_of_measurement: milliseconds
           mode: slider
 
-    hold_repeat_interval:
-      name: Long-press repeat interval (ms)
-      default: 300
-      selector:
-        number:
-          min: 100
-          max: 1000
-          step: 50
-          unit_of_measurement: ms
-
     brightness_step:
       name: Brightness / fan step (%)
       default: 10
@@ -172,7 +162,6 @@ variables:
   brightness_step: !input brightness_step
   cover_step: !input cover_step
   volume_step: !input volume_step
-  hold_repeat_interval: !input hold_repeat_interval
   debug: !input debug_mode
 
   command: "{{ trigger.event.data.command }}"
@@ -540,16 +529,15 @@ actions:
 
       ##################################################################
       # UP LONG-PRESS (cluster 8, move_with_on_off)
-      # The wait_for_trigger is placed FIRST in the loop and doubles
-      # as the repeat delay. If stop arrives the until: exits cleanly.
-      # If it times out the service fires and we loop again.
-      # Safety net: repeat.index >= 30 (~9 seconds at 300ms interval).
+      # No repeat loop — the Styrbar sends repeated move_with_on_off
+      # events while held. Each one triggers the automation and fires
+      # one step. stop_with_on_off falls through doing nothing.
+      # This eliminates any possibility of a stuck loop.
       ##################################################################
       - conditions:
           - condition: template
             value_template: "{{ cluster_id == 8 and command == 'move_with_on_off' }}"
         sequence:
-          # Fire immediately on first iteration before waiting
           - choose:
               - conditions: "{{ last_domain == 'light' }}"
                 sequence:
@@ -585,80 +573,15 @@ actions:
                       entity_id: "{{ last_entity }}"
                       position: >
                         {{ [ (state_attr(last_entity, 'current_position') | float(0)) + (cover_step | int), 100 ] | min }}
-          - repeat:
-              sequence:
-                # Wait for stop event — this IS the repeat delay.
-                # If stop arrives before timeout: exit loop.
-                # If timeout: fire the service and repeat.
-                - wait_for_trigger:
-                    - trigger: event
-                      event_type: zha_event
-                      event_data:
-                        device_id: !input remote
-                        command: stop_with_on_off
-                    - trigger: event
-                      event_type: zha_event
-                      event_data:
-                        device_id: !input remote
-                        command: stop
-                  timeout:
-                    milliseconds: !input hold_repeat_interval
-                  continue_on_timeout: true
-                # Only fire service if stop did NOT arrive
-                - if: "{{ wait.trigger is none }}"
-                  then:
-                    - choose:
-                        - conditions: "{{ last_domain == 'light' }}"
-                          sequence:
-                            - service: light.turn_on
-                              data:
-                                entity_id: "{{ last_entity }}"
-                                brightness_step_pct: "{{ brightness_step | int }}"
-                        - conditions: "{{ last_domain == 'media_player' }}"
-                          sequence:
-                            - service: media_player.volume_set
-                              data:
-                                entity_id: "{{ last_entity }}"
-                                volume_level: >
-                                  {{ [ (state_attr(last_entity, 'volume_level') | float(0)) + (volume_step | float), 1.0 ] | min }}
-                        - conditions: "{{ last_domain == 'fan' }}"
-                          sequence:
-                            - service: fan.set_percentage
-                              data:
-                                entity_id: "{{ last_entity }}"
-                                percentage: >
-                                  {{ [ (state_attr(last_entity, 'percentage') | float(0)) + (brightness_step | int), 100 ] | min }}
-                        - conditions: "{{ last_domain == 'climate' }}"
-                          sequence:
-                            - service: climate.set_temperature
-                              data:
-                                entity_id: "{{ last_entity }}"
-                                temperature: >
-                                  {{ (state_attr(last_entity, 'temperature') | float(20)) + (volume_step | float) }}
-                        - conditions: "{{ last_domain == 'cover' }}"
-                          sequence:
-                            - service: cover.set_cover_position
-                              data:
-                                entity_id: "{{ last_entity }}"
-                                position: >
-                                  {{ [ (state_attr(last_entity, 'current_position') | float(0)) + (cover_step | int), 100 ] | min }}
-              until:
-                - condition: template
-                  value_template: >
-                    {{ wait.trigger is not none or repeat.index >= 30 }}
 
       ##################################################################
       # DOWN LONG-PRESS (cluster 8, move)
-      # The wait_for_trigger is placed FIRST in the loop and doubles
-      # as the repeat delay. If stop arrives the until: exits cleanly.
-      # If it times out the service fires and we loop again.
-      # Safety net: repeat.index >= 30 (~9 seconds at 300ms interval).
+      # Same approach — one step per move event, no loop.
       ##################################################################
       - conditions:
           - condition: template
             value_template: "{{ cluster_id == 8 and command == 'move' }}"
         sequence:
-          # Fire immediately on first iteration before waiting
           - choose:
               - conditions: "{{ last_domain == 'light' }}"
                 sequence:
@@ -694,64 +617,3 @@ actions:
                       entity_id: "{{ last_entity }}"
                       position: >
                         {{ [ (state_attr(last_entity, 'current_position') | float(100)) - (cover_step | int), 0 ] | max }}
-          - repeat:
-              sequence:
-                # Wait for stop event — this IS the repeat delay.
-                # If stop arrives before timeout: exit loop.
-                # If timeout: fire the service and repeat.
-                - wait_for_trigger:
-                    - trigger: event
-                      event_type: zha_event
-                      event_data:
-                        device_id: !input remote
-                        command: stop_with_on_off
-                    - trigger: event
-                      event_type: zha_event
-                      event_data:
-                        device_id: !input remote
-                        command: stop
-                  timeout:
-                    milliseconds: !input hold_repeat_interval
-                  continue_on_timeout: true
-                # Only fire service if stop did NOT arrive
-                - if: "{{ wait.trigger is none }}"
-                  then:
-                    - choose:
-                        - conditions: "{{ last_domain == 'light' }}"
-                          sequence:
-                            - service: light.turn_on
-                              data:
-                                entity_id: "{{ last_entity }}"
-                                brightness_step_pct: "{{ (brightness_step | int) * -1 }}"
-                        - conditions: "{{ last_domain == 'media_player' }}"
-                          sequence:
-                            - service: media_player.volume_set
-                              data:
-                                entity_id: "{{ last_entity }}"
-                                volume_level: >
-                                  {{ [ (state_attr(last_entity, 'volume_level') | float(0)) - (volume_step | float), 0.0 ] | max }}
-                        - conditions: "{{ last_domain == 'fan' }}"
-                          sequence:
-                            - service: fan.set_percentage
-                              data:
-                                entity_id: "{{ last_entity }}"
-                                percentage: >
-                                  {{ [ (state_attr(last_entity, 'percentage') | float(100)) - (brightness_step | int), 0 ] | max }}
-                        - conditions: "{{ last_domain == 'climate' }}"
-                          sequence:
-                            - service: climate.set_temperature
-                              data:
-                                entity_id: "{{ last_entity }}"
-                                temperature: >
-                                  {{ (state_attr(last_entity, 'temperature') | float(20)) - (volume_step | float) }}
-                        - conditions: "{{ last_domain == 'cover' }}"
-                          sequence:
-                            - service: cover.set_cover_position
-                              data:
-                                entity_id: "{{ last_entity }}"
-                                position: >
-                                  {{ [ (state_attr(last_entity, 'current_position') | float(100)) - (cover_step | int), 0 ] | max }}
-              until:
-                - condition: template
-                  value_template: >
-                    {{ wait.trigger is not none or repeat.index >= 30 }}
