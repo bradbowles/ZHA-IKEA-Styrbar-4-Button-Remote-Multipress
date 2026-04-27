@@ -163,6 +163,9 @@ conditions:
     value_template: >
       {{ trigger.event.data.command in ['on', 'off', 'press', 'release',
          'move_with_on_off', 'move', 'stop_with_on_off', 'stop'] }}
+  # Reject attribute_updated events fired alongside on/off presses
+  - condition: template
+    value_template: "{{ trigger.event.data.command != 'attribute_updated' }}"
 
 variables:
   helper: !input last_action_helper
@@ -215,10 +218,10 @@ actions:
   - choose:
 
       ##################################################################
-      # UP BUTTON (command: "on", cluster_id: 6 only)
-      # cluster_id: 6 constraint is critical — without it the
-      # wait_for_trigger can catch move_with_on_off (cluster 8)
-      # events which also fire "on", shifting press counts by one.
+      # UP BUTTON (command: "on", cluster_id: 6)
+      # attribute_updated is now filtered at the conditions level so
+      # wait_for_trigger only sees genuine command: "on" events,
+      # giving exactly 1 event per physical press.
       ##################################################################
       - conditions:
           - condition: template
@@ -228,13 +231,12 @@ actions:
               - trigger: event
                 event_type: zha_event
                 event_data:
-                  device_id: !input remote
-                  cluster_id: 6
-                  command: "on"
+                    device_id: !input remote
+                    cluster_id: 6
+                    command: "on"
             timeout:
               milliseconds: !input press_timeout
             continue_on_timeout: true
-
           - if:
               - condition: template
                 value_template: "{{ wait.trigger is none }}"
@@ -258,13 +260,12 @@ actions:
                     - trigger: event
                       event_type: zha_event
                       event_data:
-                        device_id: !input remote
-                        cluster_id: 6
-                        command: "on"
+                          device_id: !input remote
+                          cluster_id: 6
+                          command: "on"
                   timeout:
                     milliseconds: !input press_timeout
                   continue_on_timeout: true
-
                 - if:
                     - condition: template
                       value_template: "{{ wait.trigger is none }}"
@@ -298,9 +299,10 @@ actions:
                             value: "{{ _entity }}"
 
       ##################################################################
-      # DOWN BUTTON (command: "off", cluster_id: 6 only)
-      # Same reasoning as UP — cluster_id: 6 prevents move/stop
-      # events from cluster 8 being caught as press events.
+      # DOWN BUTTON (command: "off", cluster_id: 6)
+      # attribute_updated is now filtered at the conditions level so
+      # wait_for_trigger only sees genuine command: "off" events,
+      # giving exactly 1 event per physical press.
       ##################################################################
       - conditions:
           - condition: template
@@ -310,13 +312,12 @@ actions:
               - trigger: event
                 event_type: zha_event
                 event_data:
-                  device_id: !input remote
-                  cluster_id: 6
-                  command: "off"
+                    device_id: !input remote
+                    cluster_id: 6
+                    command: "off"
             timeout:
               milliseconds: !input press_timeout
             continue_on_timeout: true
-
           - if:
               - condition: template
                 value_template: "{{ wait.trigger is none }}"
@@ -340,13 +341,12 @@ actions:
                     - trigger: event
                       event_type: zha_event
                       event_data:
-                        device_id: !input remote
-                        cluster_id: 6
-                        command: "off"
+                          device_id: !input remote
+                          cluster_id: 6
+                          command: "off"
                   timeout:
                     milliseconds: !input press_timeout
                   continue_on_timeout: true
-
                 - if:
                     - condition: template
                       value_template: "{{ wait.trigger is none }}"
@@ -379,7 +379,6 @@ actions:
                             entity_id: "{{ helper }}"
                             value: "{{ _entity }}"
 
-      ##################################################################
       # RIGHT BUTTON (args [256, 13, 0])
       ##################################################################
       - conditions:
