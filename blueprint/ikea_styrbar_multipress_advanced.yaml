@@ -2,13 +2,13 @@ blueprint:
   name: "ZHA - IKEA Styrbar N2 (4-Button) — Multipress 1–3 + UP/DOWN Long-Press Repeat"
   description: >
     Styrbar N2 blueprint with reliable multi-press (1–3) on all four buttons
-    and UP/DOWN long-press brightness/volume/fan/climate/cover repeat.
+    and UP/DOWN long-press repeat for light brightness, media volume, fan speed,
+    climate temperature, and cover position.
 
     The long-press target entity is automatically extracted from whichever
-    action was last fired — no separate entity inputs needed. Just configure
-    the actions and the blueprint handles the rest.
+    action was last fired — no separate entity inputs needed.
 
-    Requires one input_text helper (any max length >= 50).
+    Requires one input_text helper (max length >= 50).
 
   domain: automation
 
@@ -25,8 +25,8 @@ blueprint:
     last_action_helper:
       name: Last Action Helper (input_text)
       description: >
-        Stores the entity last used by a short press so UP/DOWN long-press
-        knows what to control. Create an input_text helper with max length >= 50.
+        Stores the entity last used so UP/DOWN long-press knows what to control.
+        Create an input_text helper with max length >= 50.
       selector:
         entity:
           domain: input_text
@@ -61,6 +61,15 @@ blueprint:
           max: 50
           step: 1
 
+    cover_step:
+      name: Cover position step (%)
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 50
+          step: 1
+
     volume_step:
       name: Volume / climate step
       default: 0.05
@@ -77,7 +86,7 @@ blueprint:
         boolean: {}
 
     ############################################################
-    # ACTION INPUTS — entity is extracted from these automatically
+    # ACTION INPUTS
     ############################################################
 
     up_single_action:
@@ -158,6 +167,7 @@ conditions:
 variables:
   helper: !input last_action_helper
   brightness_step: !input brightness_step
+  cover_step: !input cover_step
   volume_step: !input volume_step
   hold_repeat_interval: !input hold_repeat_interval
   debug: !input debug_mode
@@ -165,7 +175,7 @@ variables:
   command: "{{ trigger.event.data.command }}"
   cluster_id: "{{ trigger.event.data.cluster_id | default(-1) | int }}"
 
-  # Resolved action lists — needed so we can inspect them for entity extraction
+  # Resolved action lists for entity extraction
   up_single_action:    !input up_single_action
   up_double_action:    !input up_double_action
   up_triple_action:    !input up_triple_action
@@ -225,24 +235,16 @@ actions:
               - condition: template
                 value_template: "{{ wait.trigger is none }}"
             then:
-              # SINGLE — fire action then update helper from it
+              # SINGLE
               - sequence: !input up_single_action
               - variables:
-                  _action: "{{ up_single_action }}"
                   _entity: >
-                    {% set a = _action %}
-                    {% if a | length > 0 %}
-                      {% set first = a[0] %}
-                      {% if first.target is defined and first.target.entity_id is defined %}
-                        {{ first.target.entity_id }}
-                      {% elif first.data is defined and first.data.entity_id is defined %}
-                        {{ first.data.entity_id }}
-                      {% else %}
-                        {{ last_entity }}
-                      {% endif %}
-                    {% else %}
-                      {{ last_entity }}
-                    {% endif %}
+                    {% set a = up_single_action %}
+                    {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
+                      {{ a[0].target.entity_id }}
+                    {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
+                      {{ a[0].data.entity_id }}
+                    {% else %}{{ last_entity }}{% endif %}
               - if: "{{ _entity not in ['', None, 'none'] }}"
                 then:
                   - service: input_text.set_value
@@ -268,21 +270,13 @@ actions:
                     # DOUBLE
                     - sequence: !input up_double_action
                     - variables:
-                        _action: "{{ up_double_action }}"
                         _entity: >
-                          {% set a = _action %}
-                          {% if a | length > 0 %}
-                            {% set first = a[0] %}
-                            {% if first.target is defined and first.target.entity_id is defined %}
-                              {{ first.target.entity_id }}
-                            {% elif first.data is defined and first.data.entity_id is defined %}
-                              {{ first.data.entity_id }}
-                            {% else %}
-                              {{ last_entity }}
-                            {% endif %}
-                          {% else %}
-                            {{ last_entity }}
-                          {% endif %}
+                          {% set a = up_double_action %}
+                          {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
+                            {{ a[0].target.entity_id }}
+                          {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
+                            {{ a[0].data.entity_id }}
+                          {% else %}{{ last_entity }}{% endif %}
                     - if: "{{ _entity not in ['', None, 'none'] }}"
                       then:
                         - service: input_text.set_value
@@ -293,21 +287,13 @@ actions:
                     # TRIPLE
                     - sequence: !input up_triple_action
                     - variables:
-                        _action: "{{ up_triple_action }}"
                         _entity: >
-                          {% set a = _action %}
-                          {% if a | length > 0 %}
-                            {% set first = a[0] %}
-                            {% if first.target is defined and first.target.entity_id is defined %}
-                              {{ first.target.entity_id }}
-                            {% elif first.data is defined and first.data.entity_id is defined %}
-                              {{ first.data.entity_id }}
-                            {% else %}
-                              {{ last_entity }}
-                            {% endif %}
-                          {% else %}
-                            {{ last_entity }}
-                          {% endif %}
+                          {% set a = up_triple_action %}
+                          {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
+                            {{ a[0].target.entity_id }}
+                          {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
+                            {{ a[0].data.entity_id }}
+                          {% else %}{{ last_entity }}{% endif %}
                     - if: "{{ _entity not in ['', None, 'none'] }}"
                       then:
                         - service: input_text.set_value
@@ -336,23 +322,16 @@ actions:
               - condition: template
                 value_template: "{{ wait.trigger is none }}"
             then:
+              # SINGLE
               - sequence: !input down_single_action
               - variables:
-                  _action: "{{ down_single_action }}"
                   _entity: >
-                    {% set a = _action %}
-                    {% if a | length > 0 %}
-                      {% set first = a[0] %}
-                      {% if first.target is defined and first.target.entity_id is defined %}
-                        {{ first.target.entity_id }}
-                      {% elif first.data is defined and first.data.entity_id is defined %}
-                        {{ first.data.entity_id }}
-                      {% else %}
-                        {{ last_entity }}
-                      {% endif %}
-                    {% else %}
-                      {{ last_entity }}
-                    {% endif %}
+                    {% set a = down_single_action %}
+                    {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
+                      {{ a[0].target.entity_id }}
+                    {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
+                      {{ a[0].data.entity_id }}
+                    {% else %}{{ last_entity }}{% endif %}
               - if: "{{ _entity not in ['', None, 'none'] }}"
                 then:
                   - service: input_text.set_value
@@ -375,23 +354,16 @@ actions:
                     - condition: template
                       value_template: "{{ wait.trigger is none }}"
                   then:
+                    # DOUBLE
                     - sequence: !input down_double_action
                     - variables:
-                        _action: "{{ down_double_action }}"
                         _entity: >
-                          {% set a = _action %}
-                          {% if a | length > 0 %}
-                            {% set first = a[0] %}
-                            {% if first.target is defined and first.target.entity_id is defined %}
-                              {{ first.target.entity_id }}
-                            {% elif first.data is defined and first.data.entity_id is defined %}
-                              {{ first.data.entity_id }}
-                            {% else %}
-                              {{ last_entity }}
-                            {% endif %}
-                          {% else %}
-                            {{ last_entity }}
-                          {% endif %}
+                          {% set a = down_double_action %}
+                          {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
+                            {{ a[0].target.entity_id }}
+                          {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
+                            {{ a[0].data.entity_id }}
+                          {% else %}{{ last_entity }}{% endif %}
                     - if: "{{ _entity not in ['', None, 'none'] }}"
                       then:
                         - service: input_text.set_value
@@ -399,23 +371,16 @@ actions:
                             entity_id: "{{ helper }}"
                             value: "{{ _entity }}"
                   else:
+                    # TRIPLE
                     - sequence: !input down_triple_action
                     - variables:
-                        _action: "{{ down_triple_action }}"
                         _entity: >
-                          {% set a = _action %}
-                          {% if a | length > 0 %}
-                            {% set first = a[0] %}
-                            {% if first.target is defined and first.target.entity_id is defined %}
-                              {{ first.target.entity_id }}
-                            {% elif first.data is defined and first.data.entity_id is defined %}
-                              {{ first.data.entity_id }}
-                            {% else %}
-                              {{ last_entity }}
-                            {% endif %}
-                          {% else %}
-                            {{ last_entity }}
-                          {% endif %}
+                          {% set a = down_triple_action %}
+                          {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
+                            {{ a[0].target.entity_id }}
+                          {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
+                            {{ a[0].data.entity_id }}
+                          {% else %}{{ last_entity }}{% endif %}
                     - if: "{{ _entity not in ['', None, 'none'] }}"
                       then:
                         - service: input_text.set_value
@@ -445,23 +410,16 @@ actions:
               - condition: template
                 value_template: "{{ wait.trigger is none }}"
             then:
+              # SINGLE
               - sequence: !input right_single_action
               - variables:
-                  _action: "{{ right_single_action }}"
                   _entity: >
-                    {% set a = _action %}
-                    {% if a | length > 0 %}
-                      {% set first = a[0] %}
-                      {% if first.target is defined and first.target.entity_id is defined %}
-                        {{ first.target.entity_id }}
-                      {% elif first.data is defined and first.data.entity_id is defined %}
-                        {{ first.data.entity_id }}
-                      {% else %}
-                        {{ last_entity }}
-                      {% endif %}
-                    {% else %}
-                      {{ last_entity }}
-                    {% endif %}
+                    {% set a = right_single_action %}
+                    {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
+                      {{ a[0].target.entity_id }}
+                    {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
+                      {{ a[0].data.entity_id }}
+                    {% else %}{{ last_entity }}{% endif %}
               - if: "{{ _entity not in ['', None, 'none'] }}"
                 then:
                   - service: input_text.set_value
@@ -485,23 +443,16 @@ actions:
                     - condition: template
                       value_template: "{{ wait.trigger is none }}"
                   then:
+                    # DOUBLE
                     - sequence: !input right_double_action
                     - variables:
-                        _action: "{{ right_double_action }}"
                         _entity: >
-                          {% set a = _action %}
-                          {% if a | length > 0 %}
-                            {% set first = a[0] %}
-                            {% if first.target is defined and first.target.entity_id is defined %}
-                              {{ first.target.entity_id }}
-                            {% elif first.data is defined and first.data.entity_id is defined %}
-                              {{ first.data.entity_id }}
-                            {% else %}
-                              {{ last_entity }}
-                            {% endif %}
-                          {% else %}
-                            {{ last_entity }}
-                          {% endif %}
+                          {% set a = right_double_action %}
+                          {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
+                            {{ a[0].target.entity_id }}
+                          {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
+                            {{ a[0].data.entity_id }}
+                          {% else %}{{ last_entity }}{% endif %}
                     - if: "{{ _entity not in ['', None, 'none'] }}"
                       then:
                         - service: input_text.set_value
@@ -509,23 +460,16 @@ actions:
                             entity_id: "{{ helper }}"
                             value: "{{ _entity }}"
                   else:
+                    # TRIPLE
                     - sequence: !input right_triple_action
                     - variables:
-                        _action: "{{ right_triple_action }}"
                         _entity: >
-                          {% set a = _action %}
-                          {% if a | length > 0 %}
-                            {% set first = a[0] %}
-                            {% if first.target is defined and first.target.entity_id is defined %}
-                              {{ first.target.entity_id }}
-                            {% elif first.data is defined and first.data.entity_id is defined %}
-                              {{ first.data.entity_id }}
-                            {% else %}
-                              {{ last_entity }}
-                            {% endif %}
-                          {% else %}
-                            {{ last_entity }}
-                          {% endif %}
+                          {% set a = right_triple_action %}
+                          {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
+                            {{ a[0].target.entity_id }}
+                          {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
+                            {{ a[0].data.entity_id }}
+                          {% else %}{{ last_entity }}{% endif %}
                     - if: "{{ _entity not in ['', None, 'none'] }}"
                       then:
                         - service: input_text.set_value
@@ -555,23 +499,16 @@ actions:
               - condition: template
                 value_template: "{{ wait.trigger is none }}"
             then:
+              # SINGLE
               - sequence: !input left_single_action
               - variables:
-                  _action: "{{ left_single_action }}"
                   _entity: >
-                    {% set a = _action %}
-                    {% if a | length > 0 %}
-                      {% set first = a[0] %}
-                      {% if first.target is defined and first.target.entity_id is defined %}
-                        {{ first.target.entity_id }}
-                      {% elif first.data is defined and first.data.entity_id is defined %}
-                        {{ first.data.entity_id }}
-                      {% else %}
-                        {{ last_entity }}
-                      {% endif %}
-                    {% else %}
-                      {{ last_entity }}
-                    {% endif %}
+                    {% set a = left_single_action %}
+                    {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
+                      {{ a[0].target.entity_id }}
+                    {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
+                      {{ a[0].data.entity_id }}
+                    {% else %}{{ last_entity }}{% endif %}
               - if: "{{ _entity not in ['', None, 'none'] }}"
                 then:
                   - service: input_text.set_value
@@ -595,23 +532,16 @@ actions:
                     - condition: template
                       value_template: "{{ wait.trigger is none }}"
                   then:
+                    # DOUBLE
                     - sequence: !input left_double_action
                     - variables:
-                        _action: "{{ left_double_action }}"
                         _entity: >
-                          {% set a = _action %}
-                          {% if a | length > 0 %}
-                            {% set first = a[0] %}
-                            {% if first.target is defined and first.target.entity_id is defined %}
-                              {{ first.target.entity_id }}
-                            {% elif first.data is defined and first.data.entity_id is defined %}
-                              {{ first.data.entity_id }}
-                            {% else %}
-                              {{ last_entity }}
-                            {% endif %}
-                          {% else %}
-                            {{ last_entity }}
-                          {% endif %}
+                          {% set a = left_double_action %}
+                          {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
+                            {{ a[0].target.entity_id }}
+                          {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
+                            {{ a[0].data.entity_id }}
+                          {% else %}{{ last_entity }}{% endif %}
                     - if: "{{ _entity not in ['', None, 'none'] }}"
                       then:
                         - service: input_text.set_value
@@ -619,23 +549,16 @@ actions:
                             entity_id: "{{ helper }}"
                             value: "{{ _entity }}"
                   else:
+                    # TRIPLE
                     - sequence: !input left_triple_action
                     - variables:
-                        _action: "{{ left_triple_action }}"
                         _entity: >
-                          {% set a = _action %}
-                          {% if a | length > 0 %}
-                            {% set first = a[0] %}
-                            {% if first.target is defined and first.target.entity_id is defined %}
-                              {{ first.target.entity_id }}
-                            {% elif first.data is defined and first.data.entity_id is defined %}
-                              {{ first.data.entity_id }}
-                            {% else %}
-                              {{ last_entity }}
-                            {% endif %}
-                          {% else %}
-                            {{ last_entity }}
-                          {% endif %}
+                          {% set a = left_triple_action %}
+                          {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
+                            {{ a[0].target.entity_id }}
+                          {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
+                            {{ a[0].data.entity_id }}
+                          {% else %}{{ last_entity }}{% endif %}
                     - if: "{{ _entity not in ['', None, 'none'] }}"
                       then:
                         - service: input_text.set_value
@@ -646,13 +569,10 @@ actions:
       ##################################################################
       # UP LONG-PRESS (cluster 8, move_with_on_off)
       #
-      # The stop event (stop/stop_with_on_off) cannot be caught by
-      # wait_for_trigger inside the loop when mode: single is active,
-      # because mode: single drops new automation triggers — but
-      # wait_for_trigger listens to events independently of the
-      # automation trigger, so it DOES still receive them.
-      # The repeat count limit (100) is a safety net only — in normal
-      # use the stop event will always exit the loop first.
+      # wait_for_trigger inside a repeat loop receives ZHA events
+      # independently of the automation trigger, so the stop event
+      # IS caught correctly even with mode: single.
+      # The repeat.index >= 100 limit is a safety net only.
       ##################################################################
       - conditions:
           - condition: template
@@ -694,9 +614,11 @@ actions:
 
                     - conditions: "{{ last_domain == 'cover' }}"
                       sequence:
-                        - service: cover.open_cover
+                        - service: cover.set_cover_position
                           data:
                             entity_id: "{{ last_entity }}"
+                            position: >
+                              {{ [ (state_attr(last_entity, 'current_position') | float(0)) + (cover_step | int), 100 ] | min }}
 
                     - conditions: "{{ last_domain == 'switch' }}"
                       sequence:
@@ -720,7 +642,6 @@ actions:
                   continue_on_timeout: true
 
               until:
-                # Exit when stop event received OR after 100 repeats as safety net
                 - condition: template
                   value_template: "{{ wait.trigger is not none or repeat.index >= 100 }}"
 
@@ -767,9 +688,11 @@ actions:
 
                     - conditions: "{{ last_domain == 'cover' }}"
                       sequence:
-                        - service: cover.close_cover
+                        - service: cover.set_cover_position
                           data:
                             entity_id: "{{ last_entity }}"
+                            position: >
+                              {{ [ (state_attr(last_entity, 'current_position') | float(100)) - (cover_step | int), 0 ] | max }}
 
                     - conditions: "{{ last_domain == 'switch' }}"
                       sequence:
@@ -793,6 +716,5 @@ actions:
                   continue_on_timeout: true
 
               until:
-                # Exit when stop event received OR after 100 repeats as safety net
                 - condition: template
                   value_template: "{{ wait.trigger is not none or repeat.index >= 100 }}"
