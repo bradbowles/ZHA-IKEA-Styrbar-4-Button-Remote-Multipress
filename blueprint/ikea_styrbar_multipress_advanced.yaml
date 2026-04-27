@@ -215,7 +215,10 @@ actions:
   - choose:
 
       ##################################################################
-      # UP BUTTON (command: "on")
+      # UP BUTTON (command: "on", cluster_id: 6 only)
+      # cluster_id: 6 constraint is critical — without it the
+      # wait_for_trigger can catch move_with_on_off (cluster 8)
+      # events which also fire "on", shifting press counts by one.
       ##################################################################
       - conditions:
           - condition: template
@@ -226,6 +229,7 @@ actions:
                 event_type: zha_event
                 event_data:
                   device_id: !input remote
+                  cluster_id: 6
                   command: "on"
             timeout:
               milliseconds: !input press_timeout
@@ -240,11 +244,8 @@ actions:
               - variables:
                   _entity: >
                     {% set a = up_single_action %}
-                    {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
-                      {{ a[0].target.entity_id }}
-                    {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
-                      {{ a[0].data.entity_id }}
-                    {% else %}{{ last_entity }}{% endif %}
+                    {% set _eid = a[0].target.entity_id if (a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined) else (a[0].data.entity_id if (a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined) else last_entity) %}
+                    {% if _eid is string %}{{ _eid }}{% elif _eid is iterable and _eid | length > 0 %}{{ _eid[0] }}{% else %}{{ last_entity }}{% endif %}
               - if: "{{ _entity not in ['', None, 'none'] }}"
                 then:
                   - service: input_text.set_value
@@ -258,6 +259,7 @@ actions:
                       event_type: zha_event
                       event_data:
                         device_id: !input remote
+                        cluster_id: 6
                         command: "on"
                   timeout:
                     milliseconds: !input press_timeout
@@ -272,11 +274,8 @@ actions:
                     - variables:
                         _entity: >
                           {% set a = up_double_action %}
-                          {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
-                            {{ a[0].target.entity_id }}
-                          {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
-                            {{ a[0].data.entity_id }}
-                          {% else %}{{ last_entity }}{% endif %}
+                          {% set _eid = a[0].target.entity_id if (a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined) else (a[0].data.entity_id if (a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined) else last_entity) %}
+                          {% if _eid is string %}{{ _eid }}{% elif _eid is iterable and _eid | length > 0 %}{{ _eid[0] }}{% else %}{{ last_entity }}{% endif %}
                     - if: "{{ _entity not in ['', None, 'none'] }}"
                       then:
                         - service: input_text.set_value
@@ -289,11 +288,8 @@ actions:
                     - variables:
                         _entity: >
                           {% set a = up_triple_action %}
-                          {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
-                            {{ a[0].target.entity_id }}
-                          {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
-                            {{ a[0].data.entity_id }}
-                          {% else %}{{ last_entity }}{% endif %}
+                          {% set _eid = a[0].target.entity_id if (a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined) else (a[0].data.entity_id if (a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined) else last_entity) %}
+                          {% if _eid is string %}{{ _eid }}{% elif _eid is iterable and _eid | length > 0 %}{{ _eid[0] }}{% else %}{{ last_entity }}{% endif %}
                     - if: "{{ _entity not in ['', None, 'none'] }}"
                       then:
                         - service: input_text.set_value
@@ -302,7 +298,9 @@ actions:
                             value: "{{ _entity }}"
 
       ##################################################################
-      # DOWN BUTTON (command: "off")
+      # DOWN BUTTON (command: "off", cluster_id: 6 only)
+      # Same reasoning as UP — cluster_id: 6 prevents move/stop
+      # events from cluster 8 being caught as press events.
       ##################################################################
       - conditions:
           - condition: template
@@ -313,6 +311,7 @@ actions:
                 event_type: zha_event
                 event_data:
                   device_id: !input remote
+                  cluster_id: 6
                   command: "off"
             timeout:
               milliseconds: !input press_timeout
@@ -327,11 +326,8 @@ actions:
               - variables:
                   _entity: >
                     {% set a = down_single_action %}
-                    {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
-                      {{ a[0].target.entity_id }}
-                    {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
-                      {{ a[0].data.entity_id }}
-                    {% else %}{{ last_entity }}{% endif %}
+                    {% set _eid = a[0].target.entity_id if (a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined) else (a[0].data.entity_id if (a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined) else last_entity) %}
+                    {% if _eid is string %}{{ _eid }}{% elif _eid is iterable and _eid | length > 0 %}{{ _eid[0] }}{% else %}{{ last_entity }}{% endif %}
               - if: "{{ _entity not in ['', None, 'none'] }}"
                 then:
                   - service: input_text.set_value
@@ -345,6 +341,7 @@ actions:
                       event_type: zha_event
                       event_data:
                         device_id: !input remote
+                        cluster_id: 6
                         command: "off"
                   timeout:
                     milliseconds: !input press_timeout
@@ -359,11 +356,8 @@ actions:
                     - variables:
                         _entity: >
                           {% set a = down_double_action %}
-                          {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
-                            {{ a[0].target.entity_id }}
-                          {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
-                            {{ a[0].data.entity_id }}
-                          {% else %}{{ last_entity }}{% endif %}
+                          {% set _eid = a[0].target.entity_id if (a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined) else (a[0].data.entity_id if (a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined) else last_entity) %}
+                          {% if _eid is string %}{{ _eid }}{% elif _eid is iterable and _eid | length > 0 %}{{ _eid[0] }}{% else %}{{ last_entity }}{% endif %}
                     - if: "{{ _entity not in ['', None, 'none'] }}"
                       then:
                         - service: input_text.set_value
@@ -376,11 +370,8 @@ actions:
                     - variables:
                         _entity: >
                           {% set a = down_triple_action %}
-                          {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
-                            {{ a[0].target.entity_id }}
-                          {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
-                            {{ a[0].data.entity_id }}
-                          {% else %}{{ last_entity }}{% endif %}
+                          {% set _eid = a[0].target.entity_id if (a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined) else (a[0].data.entity_id if (a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined) else last_entity) %}
+                          {% if _eid is string %}{{ _eid }}{% elif _eid is iterable and _eid | length > 0 %}{{ _eid[0] }}{% else %}{{ last_entity }}{% endif %}
                     - if: "{{ _entity not in ['', None, 'none'] }}"
                       then:
                         - service: input_text.set_value
@@ -415,11 +406,8 @@ actions:
               - variables:
                   _entity: >
                     {% set a = right_single_action %}
-                    {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
-                      {{ a[0].target.entity_id }}
-                    {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
-                      {{ a[0].data.entity_id }}
-                    {% else %}{{ last_entity }}{% endif %}
+                    {% set _eid = a[0].target.entity_id if (a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined) else (a[0].data.entity_id if (a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined) else last_entity) %}
+                    {% if _eid is string %}{{ _eid }}{% elif _eid is iterable and _eid | length > 0 %}{{ _eid[0] }}{% else %}{{ last_entity }}{% endif %}
               - if: "{{ _entity not in ['', None, 'none'] }}"
                 then:
                   - service: input_text.set_value
@@ -448,11 +436,8 @@ actions:
                     - variables:
                         _entity: >
                           {% set a = right_double_action %}
-                          {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
-                            {{ a[0].target.entity_id }}
-                          {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
-                            {{ a[0].data.entity_id }}
-                          {% else %}{{ last_entity }}{% endif %}
+                          {% set _eid = a[0].target.entity_id if (a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined) else (a[0].data.entity_id if (a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined) else last_entity) %}
+                          {% if _eid is string %}{{ _eid }}{% elif _eid is iterable and _eid | length > 0 %}{{ _eid[0] }}{% else %}{{ last_entity }}{% endif %}
                     - if: "{{ _entity not in ['', None, 'none'] }}"
                       then:
                         - service: input_text.set_value
@@ -465,11 +450,8 @@ actions:
                     - variables:
                         _entity: >
                           {% set a = right_triple_action %}
-                          {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
-                            {{ a[0].target.entity_id }}
-                          {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
-                            {{ a[0].data.entity_id }}
-                          {% else %}{{ last_entity }}{% endif %}
+                          {% set _eid = a[0].target.entity_id if (a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined) else (a[0].data.entity_id if (a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined) else last_entity) %}
+                          {% if _eid is string %}{{ _eid }}{% elif _eid is iterable and _eid | length > 0 %}{{ _eid[0] }}{% else %}{{ last_entity }}{% endif %}
                     - if: "{{ _entity not in ['', None, 'none'] }}"
                       then:
                         - service: input_text.set_value
@@ -504,11 +486,8 @@ actions:
               - variables:
                   _entity: >
                     {% set a = left_single_action %}
-                    {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
-                      {{ a[0].target.entity_id }}
-                    {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
-                      {{ a[0].data.entity_id }}
-                    {% else %}{{ last_entity }}{% endif %}
+                    {% set _eid = a[0].target.entity_id if (a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined) else (a[0].data.entity_id if (a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined) else last_entity) %}
+                    {% if _eid is string %}{{ _eid }}{% elif _eid is iterable and _eid | length > 0 %}{{ _eid[0] }}{% else %}{{ last_entity }}{% endif %}
               - if: "{{ _entity not in ['', None, 'none'] }}"
                 then:
                   - service: input_text.set_value
@@ -537,11 +516,8 @@ actions:
                     - variables:
                         _entity: >
                           {% set a = left_double_action %}
-                          {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
-                            {{ a[0].target.entity_id }}
-                          {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
-                            {{ a[0].data.entity_id }}
-                          {% else %}{{ last_entity }}{% endif %}
+                          {% set _eid = a[0].target.entity_id if (a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined) else (a[0].data.entity_id if (a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined) else last_entity) %}
+                          {% if _eid is string %}{{ _eid }}{% elif _eid is iterable and _eid | length > 0 %}{{ _eid[0] }}{% else %}{{ last_entity }}{% endif %}
                     - if: "{{ _entity not in ['', None, 'none'] }}"
                       then:
                         - service: input_text.set_value
@@ -554,11 +530,8 @@ actions:
                     - variables:
                         _entity: >
                           {% set a = left_triple_action %}
-                          {% if a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined %}
-                            {{ a[0].target.entity_id }}
-                          {% elif a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined %}
-                            {{ a[0].data.entity_id }}
-                          {% else %}{{ last_entity }}{% endif %}
+                          {% set _eid = a[0].target.entity_id if (a | length > 0 and a[0].target is defined and a[0].target.entity_id is defined) else (a[0].data.entity_id if (a | length > 0 and a[0].data is defined and a[0].data.entity_id is defined) else last_entity) %}
+                          {% if _eid is string %}{{ _eid }}{% elif _eid is iterable and _eid | length > 0 %}{{ _eid[0] }}{% else %}{{ last_entity }}{% endif %}
                     - if: "{{ _entity not in ['', None, 'none'] }}"
                       then:
                         - service: input_text.set_value
