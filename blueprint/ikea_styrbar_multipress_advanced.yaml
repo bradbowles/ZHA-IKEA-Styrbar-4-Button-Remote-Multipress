@@ -540,64 +540,56 @@ actions:
 
       ##################################################################
       # UP LONG-PRESS (cluster 8, move_with_on_off)
-      #
-      # wait_for_trigger inside a repeat loop receives ZHA events
-      # independently of the automation trigger, so the stop event
-      # IS caught correctly even with mode: single.
-      # The repeat.index >= 100 limit is a safety net only.
+      # The wait_for_trigger is placed FIRST in the loop and doubles
+      # as the repeat delay. If stop arrives the until: exits cleanly.
+      # If it times out the service fires and we loop again.
+      # Safety net: repeat.index >= 30 (~9 seconds at 300ms interval).
       ##################################################################
       - conditions:
           - condition: template
             value_template: "{{ cluster_id == 8 and command == 'move_with_on_off' }}"
         sequence:
+          # Fire immediately on first iteration before waiting
+          - choose:
+              - conditions: "{{ last_domain == 'light' }}"
+                sequence:
+                  - service: light.turn_on
+                    data:
+                      entity_id: "{{ last_entity }}"
+                      brightness_step_pct: "{{ brightness_step | int }}"
+              - conditions: "{{ last_domain == 'media_player' }}"
+                sequence:
+                  - service: media_player.volume_set
+                    data:
+                      entity_id: "{{ last_entity }}"
+                      volume_level: >
+                        {{ [ (state_attr(last_entity, 'volume_level') | float(0)) + (volume_step | float), 1.0 ] | min }}
+              - conditions: "{{ last_domain == 'fan' }}"
+                sequence:
+                  - service: fan.set_percentage
+                    data:
+                      entity_id: "{{ last_entity }}"
+                      percentage: >
+                        {{ [ (state_attr(last_entity, 'percentage') | float(0)) + (brightness_step | int), 100 ] | min }}
+              - conditions: "{{ last_domain == 'climate' }}"
+                sequence:
+                  - service: climate.set_temperature
+                    data:
+                      entity_id: "{{ last_entity }}"
+                      temperature: >
+                        {{ (state_attr(last_entity, 'temperature') | float(20)) + (volume_step | float) }}
+              - conditions: "{{ last_domain == 'cover' }}"
+                sequence:
+                  - service: cover.set_cover_position
+                    data:
+                      entity_id: "{{ last_entity }}"
+                      position: >
+                        {{ [ (state_attr(last_entity, 'current_position') | float(0)) + (cover_step | int), 100 ] | min }}
           - repeat:
               sequence:
-                - choose:
-                    - conditions: "{{ last_domain == 'light' }}"
-                      sequence:
-                        - service: light.turn_on
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            brightness_step_pct: "{{ brightness_step | int }}"
-
-                    - conditions: "{{ last_domain == 'media_player' }}"
-                      sequence:
-                        - service: media_player.volume_set
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            volume_level: >
-                              {{ [ (state_attr(last_entity, 'volume_level') | float(0)) + (volume_step | float), 1.0 ] | min }}
-
-                    - conditions: "{{ last_domain == 'fan' }}"
-                      sequence:
-                        - service: fan.set_percentage
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            percentage: >
-                              {{ [ (state_attr(last_entity, 'percentage') | float(0)) + (brightness_step | int), 100 ] | min }}
-
-                    - conditions: "{{ last_domain == 'climate' }}"
-                      sequence:
-                        - service: climate.set_temperature
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            temperature: >
-                              {{ (state_attr(last_entity, 'temperature') | float(20)) + (volume_step | float) }}
-
-                    - conditions: "{{ last_domain == 'cover' }}"
-                      sequence:
-                        - service: cover.set_cover_position
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            position: >
-                              {{ [ (state_attr(last_entity, 'current_position') | float(0)) + (cover_step | int), 100 ] | min }}
-
-                    - conditions: "{{ last_domain == 'switch' }}"
-                      sequence:
-                        - service: switch.turn_on
-                          data:
-                            entity_id: "{{ last_entity }}"
-
+                # Wait for stop event — this IS the repeat delay.
+                # If stop arrives before timeout: exit loop.
+                # If timeout: fire the service and repeat.
                 - wait_for_trigger:
                     - trigger: event
                       event_type: zha_event
@@ -612,66 +604,101 @@ actions:
                   timeout:
                     milliseconds: !input hold_repeat_interval
                   continue_on_timeout: true
-
+                # Only fire service if stop did NOT arrive
+                - if: "{{ wait.trigger is none }}"
+                  then:
+                    - choose:
+                        - conditions: "{{ last_domain == 'light' }}"
+                          sequence:
+                            - service: light.turn_on
+                              data:
+                                entity_id: "{{ last_entity }}"
+                                brightness_step_pct: "{{ brightness_step | int }}"
+                        - conditions: "{{ last_domain == 'media_player' }}"
+                          sequence:
+                            - service: media_player.volume_set
+                              data:
+                                entity_id: "{{ last_entity }}"
+                                volume_level: >
+                                  {{ [ (state_attr(last_entity, 'volume_level') | float(0)) + (volume_step | float), 1.0 ] | min }}
+                        - conditions: "{{ last_domain == 'fan' }}"
+                          sequence:
+                            - service: fan.set_percentage
+                              data:
+                                entity_id: "{{ last_entity }}"
+                                percentage: >
+                                  {{ [ (state_attr(last_entity, 'percentage') | float(0)) + (brightness_step | int), 100 ] | min }}
+                        - conditions: "{{ last_domain == 'climate' }}"
+                          sequence:
+                            - service: climate.set_temperature
+                              data:
+                                entity_id: "{{ last_entity }}"
+                                temperature: >
+                                  {{ (state_attr(last_entity, 'temperature') | float(20)) + (volume_step | float) }}
+                        - conditions: "{{ last_domain == 'cover' }}"
+                          sequence:
+                            - service: cover.set_cover_position
+                              data:
+                                entity_id: "{{ last_entity }}"
+                                position: >
+                                  {{ [ (state_attr(last_entity, 'current_position') | float(0)) + (cover_step | int), 100 ] | min }}
               until:
                 - condition: template
-                  value_template: "{{ wait.trigger is not none or repeat.index >= 100 }}"
+                  value_template: >
+                    {{ wait.trigger is not none or repeat.index >= 30 }}
 
       ##################################################################
       # DOWN LONG-PRESS (cluster 8, move)
+      # The wait_for_trigger is placed FIRST in the loop and doubles
+      # as the repeat delay. If stop arrives the until: exits cleanly.
+      # If it times out the service fires and we loop again.
+      # Safety net: repeat.index >= 30 (~9 seconds at 300ms interval).
       ##################################################################
       - conditions:
           - condition: template
             value_template: "{{ cluster_id == 8 and command == 'move' }}"
         sequence:
+          # Fire immediately on first iteration before waiting
+          - choose:
+              - conditions: "{{ last_domain == 'light' }}"
+                sequence:
+                  - service: light.turn_on
+                    data:
+                      entity_id: "{{ last_entity }}"
+                      brightness_step_pct: "{{ (brightness_step | int) * -1 }}"
+              - conditions: "{{ last_domain == 'media_player' }}"
+                sequence:
+                  - service: media_player.volume_set
+                    data:
+                      entity_id: "{{ last_entity }}"
+                      volume_level: >
+                        {{ [ (state_attr(last_entity, 'volume_level') | float(0)) - (volume_step | float), 0.0 ] | max }}
+              - conditions: "{{ last_domain == 'fan' }}"
+                sequence:
+                  - service: fan.set_percentage
+                    data:
+                      entity_id: "{{ last_entity }}"
+                      percentage: >
+                        {{ [ (state_attr(last_entity, 'percentage') | float(100)) - (brightness_step | int), 0 ] | max }}
+              - conditions: "{{ last_domain == 'climate' }}"
+                sequence:
+                  - service: climate.set_temperature
+                    data:
+                      entity_id: "{{ last_entity }}"
+                      temperature: >
+                        {{ (state_attr(last_entity, 'temperature') | float(20)) - (volume_step | float) }}
+              - conditions: "{{ last_domain == 'cover' }}"
+                sequence:
+                  - service: cover.set_cover_position
+                    data:
+                      entity_id: "{{ last_entity }}"
+                      position: >
+                        {{ [ (state_attr(last_entity, 'current_position') | float(100)) - (cover_step | int), 0 ] | max }}
           - repeat:
               sequence:
-                - choose:
-                    - conditions: "{{ last_domain == 'light' }}"
-                      sequence:
-                        - service: light.turn_on
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            brightness_step_pct: "{{ (brightness_step | int) * -1 }}"
-
-                    - conditions: "{{ last_domain == 'media_player' }}"
-                      sequence:
-                        - service: media_player.volume_set
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            volume_level: >
-                              {{ [ (state_attr(last_entity, 'volume_level') | float(0)) - (volume_step | float), 0.0 ] | max }}
-
-                    - conditions: "{{ last_domain == 'fan' }}"
-                      sequence:
-                        - service: fan.set_percentage
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            percentage: >
-                              {{ [ (state_attr(last_entity, 'percentage') | float(0)) - (brightness_step | int), 0 ] | max }}
-
-                    - conditions: "{{ last_domain == 'climate' }}"
-                      sequence:
-                        - service: climate.set_temperature
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            temperature: >
-                              {{ (state_attr(last_entity, 'temperature') | float(20)) - (volume_step | float) }}
-
-                    - conditions: "{{ last_domain == 'cover' }}"
-                      sequence:
-                        - service: cover.set_cover_position
-                          data:
-                            entity_id: "{{ last_entity }}"
-                            position: >
-                              {{ [ (state_attr(last_entity, 'current_position') | float(100)) - (cover_step | int), 0 ] | max }}
-
-                    - conditions: "{{ last_domain == 'switch' }}"
-                      sequence:
-                        - service: switch.turn_off
-                          data:
-                            entity_id: "{{ last_entity }}"
-
+                # Wait for stop event — this IS the repeat delay.
+                # If stop arrives before timeout: exit loop.
+                # If timeout: fire the service and repeat.
                 - wait_for_trigger:
                     - trigger: event
                       event_type: zha_event
@@ -686,7 +713,45 @@ actions:
                   timeout:
                     milliseconds: !input hold_repeat_interval
                   continue_on_timeout: true
-
+                # Only fire service if stop did NOT arrive
+                - if: "{{ wait.trigger is none }}"
+                  then:
+                    - choose:
+                        - conditions: "{{ last_domain == 'light' }}"
+                          sequence:
+                            - service: light.turn_on
+                              data:
+                                entity_id: "{{ last_entity }}"
+                                brightness_step_pct: "{{ (brightness_step | int) * -1 }}"
+                        - conditions: "{{ last_domain == 'media_player' }}"
+                          sequence:
+                            - service: media_player.volume_set
+                              data:
+                                entity_id: "{{ last_entity }}"
+                                volume_level: >
+                                  {{ [ (state_attr(last_entity, 'volume_level') | float(0)) - (volume_step | float), 0.0 ] | max }}
+                        - conditions: "{{ last_domain == 'fan' }}"
+                          sequence:
+                            - service: fan.set_percentage
+                              data:
+                                entity_id: "{{ last_entity }}"
+                                percentage: >
+                                  {{ [ (state_attr(last_entity, 'percentage') | float(100)) - (brightness_step | int), 0 ] | max }}
+                        - conditions: "{{ last_domain == 'climate' }}"
+                          sequence:
+                            - service: climate.set_temperature
+                              data:
+                                entity_id: "{{ last_entity }}"
+                                temperature: >
+                                  {{ (state_attr(last_entity, 'temperature') | float(20)) - (volume_step | float) }}
+                        - conditions: "{{ last_domain == 'cover' }}"
+                          sequence:
+                            - service: cover.set_cover_position
+                              data:
+                                entity_id: "{{ last_entity }}"
+                                position: >
+                                  {{ [ (state_attr(last_entity, 'current_position') | float(100)) - (cover_step | int), 0 ] | max }}
               until:
                 - condition: template
-                  value_template: "{{ wait.trigger is not none or repeat.index >= 100 }}"
+                  value_template: >
+                    {{ wait.trigger is not none or repeat.index >= 30 }}
